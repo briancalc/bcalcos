@@ -46,6 +46,8 @@ BcalcOS (Alpha release) utilizes a custom installer.
 
 See https://bcalcos.org/installpage for installation instructions.
 
+See https://sourceforge.net/projects/bcalcos-linux/files/ for direct link to ISO.
+
 ---
 
 ## 5. Getting Help
