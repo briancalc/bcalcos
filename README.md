@@ -48,7 +48,7 @@ See https://bcalcos.org/installpage for installation instructions.
 
 ## 5. Getting Help
 
-- Bug reports & suggestions: [Github Issues] (link)
+- Bug reports & suggestions: https://github.com/briancalc/bcalcos/issues
 
 ----
 
