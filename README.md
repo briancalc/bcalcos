@@ -15,6 +15,8 @@ Because there are so few of them.
 
 See https://bcalcos.org/whypage for further discussion.
 
+**ALPHA RELEASE**
+
 ---
 
 ## 2. Who is this for?
