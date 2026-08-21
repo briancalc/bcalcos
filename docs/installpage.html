@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BcalcOS — Installation</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Hack&family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+
+:root{
+  --p:#BA7800;
+  --pd:#8A5A00;
+  --pl:#D99A28;
+  --pll:#EBC978;
+  --bg:#F5F6F8;
+  --white:#fff;
+  --cream:#FBF9F5;
+  --text:#2C3E50;
+  --muted:#68717A;
+  --border:#E2E5E8;
+  --gold:#E5C88F;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,sans-serif;
+  line-height:1.65;
+}
+
+h1,h2,h3{
+  font-family:Poppins,system-ui,sans-serif;
+  line-height:1.15;
+  margin:0;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.container{
+  max-width:1180px;
+  margin:auto;
+  padding:0 28px;
+}
+
+.container2{
+  max-width:550px;
+  margin:auto;
+  padding:0 28px;
+}
+
+header{
+  height:76px;
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  z-index:10;
+  backdrop-filter:blur(10px);
+}
+
+.nav{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.brand{
+  font-family:Poppins;
+  font-weight:700;
+  font-size:21px;
+  letter-spacing:-.02em;
+}
+
+.gold{color:var(--p)}
+
+nav{
+  display:flex;
+  gap:30px;
+  font-size:14px;
+  font-weight:600;
+  color:var(--muted);
+}
+
+nav a:hover{color:var(--p)}
+
+.hero{
+  min-height:560px;
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  align-items:center;
+  overflow:hidden;
+}
+
+.hero-copy{
+  padding:85px 0;
+}
+
+.kicker{
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--p);
+  margin-bottom:4px;
+  text-shadow:0 1px 0 rgba(229,200,143,.6);
+}
+
+h1{
+  font-size:clamp(44px,6vw,70px);
+  letter-spacing:-.045em;
+  max-width:700px;
+}
+
+.lede{
+  font-size:19px;
+  color:var(--muted);
+  max-width:650px;
+  margin:25px 0 30px;
+}
+
+.buttons{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px 19px;
+  border-radius:8px;
+  font-weight:700;
+  font-size:14px;
+  background:#fff;
+  border:1px solid var(--gold);
+  border-top:3px solid var(--p);
+  transition:
+    transform .16s ease,
+    background .16s ease,
+    color .16s ease,
+    box-shadow .16s ease;
+}
+
+.btn:hover{
+  transform:translateY(-3px);
+  background:var(--pll);
+  color:#fff;
+  box-shadow:0 7px 14px rgba(44,62,80,.12);
+}
+
+.hero-art{
+  height:500px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+
+.hero-art:before{
+  content:"";
+  position:absolute;
+  width:410px;
+  height:410px;
+  border-radius:50%;
+  background:var(--cream);
+  right:20px;
+  top:45px;
+}
+
+
+.hero-art .stack{
+  position:relative;
+  z-index:1;
+  width:min(430px,90%);
+}
+
+/* ---------- overview ---------- */
+
+.section{
+  padding:88px 0;
+}
+
+.section.white{
+  background:var(--white);
+}
+
+.section.cream{
+  background:var(--cream);
+}
+
+.section-head{
+  max-width:760px;
+  margin-bottom:40px;
+}
+
+.section-head h2{
+  font-size:38px;
+  letter-spacing:-.03em;
+}
+
+.section-head p{
+  color:var(--muted);
+  font-size:17px;
+  margin:14px 0 0;
+}
+
+/* ---------- requested two-column layouts ---------- */
+.system-overview{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 360px;
+  gap:30px;
+  align-items:stretch;
+}
+
+.final-section{
+  padding:88px 0;
+  background:var(--white);
+}
+
+.final-grid{
+  display:grid;
+  grid-template-columns:1.35fr .65fr;
+  gap:70px;
+  align-items:center;
+}
+
+.final-download{
+  text-align:center;
+}
+
+.final-download h2{
+  font-size:38px;
+  letter-spacing:-.03em;
+  margin:0 0 15px;
+}
+
+.final-download p{
+  color:var(--muted);
+  margin:0 auto 25px;
+  max-width:330px;
+}
+
+/* ---------- system summary ---------- */
+
+.system-card{
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+}
+
+.system-row{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  border-bottom:1px solid var(--border);
+}
+
+.system-row:last-child{
+  border-bottom:0;
+}
+
+.system-label{
+  padding:20px 22px;
+  background:var(--cream);
+  font-family:Poppins;
+  font-weight:600;
+}
+
+.system-value{
+  padding:20px 22px;
+  color:var(--muted);
+}
+
+/* ---------- architecture ---------- */
+
+.architecture{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+}
+
+.arch{
+  padding:27px 22px 30px;
+  border-right:1px solid var(--border);
+  position:relative;
+}
+
+.arch:last-child{
+  border-right:0;
+}
+
+.arch-number{
+  font-family:Hack,monospace;
+  font-size:13px;
+  color:var(--p);
+  margin-bottom:10px;
+}
+
+.arch h3{
+  font-size:19px;
+  margin-bottom:7px;
+}
+
+.arch p{
+  color:var(--muted);
+  font-size:13px;
+  margin:0;
+}
+
+/* ---------- component sections ---------- */
+
+.detail{
+  display:grid;
+  grid-template-columns:300px minmax(0,1fr);
+  gap:70px;
+  align-items:start;
+}
+
+.detail-label{
+  position:sticky;
+  top:110px;
+}
+
+.detail-label .number{
+  font-family:Hack,monospace;
+  color:var(--p);
+  font-size:13px;
+  margin-bottom:13px;
+}
+
+.detail-label h2{
+  font-size:38px;
+  letter-spacing:-.03em;
+}
+
+.detail-label .role{
+  display:inline-block;
+  margin-top:15px;
+  padding:7px 11px;
+  border:1px solid var(--gold);
+  border-radius:7px;
+  background:#fff;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+
+.detail-copy{
+  max-width:700px;
+}
+
+.detail-copy h3{
+  font-size:22px;
+  margin-bottom:13px;
+}
+
+.detail-copy p{
+  color:var(--muted);
+  font-size:16px;
+  margin:0 0 20px;
+}
+
+.reason{
+  margin-top:30px;
+  padding:23px 25px;
+  border-left:4px solid var(--p);
+  background:#fff;
+  border-radius:0 10px 10px 0;
+}
+
+.reason2{
+  margin-top:30px;
+  padding:23px 25px;
+  border-left:4px solid var(--p);
+  background:#FBF9F5;
+  border-radius:0 10px 10px 0;
+}
+
+.reason strong{
+  display:block;
+  font-family:Poppins;
+  font-size:15px;
+  margin-bottom:7px;
+}
+
+.reason span{
+  color:var(--muted);
+  font-size:15px;
+}
+
+/* ---------- philosophy ---------- */
+
+.principles{
+  font-family:Hack,monospace;
+  background:var(--text);
+  color:#fff;
+  border-radius:12px;
+  padding:35px 36px;
+  box-shadow:0 14px 35px rgba(44,62,80,.12);
+}
+
+.principles-title{
+  font-family:Poppins;
+  font-size:23px;
+  margin-bottom:18px;
+}
+
+.principles p{
+  font-family:Inter,system-ui,sans-serif;
+  color:#fff;
+  opacity:.86;
+  max-width:760px;
+  margin:0 0 23px;
+}
+
+.principles ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:grid;
+  gap:12px;
+  font-size:14px;
+}
+
+.principles li:before{
+  content:"—";
+  color:var(--pl);
+  margin-right:10px;
+}
+
+/* ---------- notes ---------- */
+
+.notes{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
+
+.note{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:25px;
+  background:#fff;
+}
+
+.note h3{
+  font-size:19px;
+  margin-bottom:9px;
+}
+
+.note p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+}
+
+/* ---------- closing ---------- */
+
+.closing{
+  text-align:center;
+  padding:96px 0;
+}
+
+.closing h2{
+  font-size:42px;
+}
+
+.closing p{
+  max-width:680px;
+  margin:16px auto 26px;
+  color:var(--muted);
+}
+
+/* ---------- footer ---------- */
+
+footer{
+  border-top:1px solid var(--border);
+  padding:35px 0;
+  background:#fff;
+}
+
+.footer{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.footer-brand{
+  font-family:Poppins;
+  font-weight:700;
+  color:var(--text);
+}
+
+/* ---------- responsive ---------- */
+
+@media(max-width:900px){
+
+  nav{
+    gap:14px;
+    font-size:12px;
+  }
+
+  .hero{
+    grid-template-columns:1fr;
+    min-height:auto;
+  }
+
+  .hero-copy{
+    padding:65px 0 20px;
+  }
+
+  .hero-art{
+    height:390px;
+  }
+
+  .hero-art:before{
+    width:320px;
+    height:320px;
+    right:50%;
+    transform:translateX(50%);
+    top:20px;
+  }
+
+  .system-overview{
+    grid-template-columns:1fr;
+  }
+
+  .final-grid{
+    grid-template-columns:1fr;
+    gap:45px;
+  }
+
+  .final-download{
+    text-align:center;
+  }
+
+  .detail{
+    grid-template-columns:1fr;
+    gap:30px;
+  }
+
+  .detail-label{
+    position:static;
+  }
+
+  .notes{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:600px){
+
+  nav a:nth-child(2){
+    display:none;
+  }
+
+  .system-row{
+    grid-template-columns:1fr;
+  }
+
+  .system-label{
+    padding-bottom:9px;
+  }
+
+  .system-value{
+    padding-top:9px;
+  }
+
+  .footer{
+    flex-direction:column;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container nav">
+    <a class="brand" href="index.html">
+      Bcalc<span class="gold">OS</span>
+    </a>
+
+    <nav>
+      <a href="index.html">BcalcOS</a>
+      <a href="whypage.html">Why BcalcOS</a>
+      <a href="index.html#docs">Documentation</a>
+      <a href="installpage.html">Install</a>
+    </nav>
+  </div>
+</header>
+
+
+<main>
+
+<!-- =========================================================
+     HERO
+========================================================= -->
+
+<section class="container hero">
+
+  <div class="hero-copy">
+
+    <div class="kicker">MORE YOU KNOW</div>
+
+    <h1>
+      Installation<br>      
+    </h1>
+
+    <p class="lede">
+      Step-by-step guide:  Download | Test | Install
+    </p>
+
+  </div>
+
+
+  <div class="hero-art">
+
+    <div class="stack" style="position:relative;width:100%;max-width:430px;margin:0 auto;">
+      <svg viewBox="0 0 430 430" width="100%" aria-label="bcalcos" style="display:block;"></svg>
+      <img src="images/image_tech_1.png" alt="BcalcOS technical illustration" style="position:absolute;inset:0;width:80%;height:80%;object-fit:contain;display:block;margin:auto;transform:translate(40px, -4px);">
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     SYSTEM AT A GLANCE
+========================================================= -->
+
+<section class="section white" id="stack">
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="kicker">Ready to rumble</div>
+
+      <h2>Install Bcalc<span class="gold">OS</span> Linux</h2>
+
+      <p>
+        BcalcOS 1.0 (bobwhite) is an ALPHA release.  
+	<br><br>
+	<span class="gold">***RECOMMEND INSTALLATION ON A VIRTUAL OR SECONDARY MACHINE.***</span>
+	<br><br>
+	Confirm your computer specs meet the minimum requirements:  
+	<br>
+	64-bit x86 CPU | 4 GB RAM | 80 GB Disk
+	<br><br>
+	Back up your data before installing!
+      </p>
+
+    </div>
+
+
+    <div class="architecture">
+
+      <div class="arch">
+        <div class="arch-number">01</div>
+        <h3>Download</h3>
+        <p>One ISO</p>
+      </div>
+
+      <div class="arch">
+        <div class="arch-number">02</div>
+        <h3>Write</h3>
+        <p>USB stick</p>
+      </div>
+
+      <div class="arch">
+        <div class="arch-number">03</div>
+        <h3>Boot</h3>
+        <p>Live boot</p>
+      </div>
+
+      <div class="arch">
+        <div class="arch-number">04</div>
+        <h3>Test</h3>
+        <p>Look around</p>
+      </div>
+
+      <div class="arch">
+        <div class="arch-number">05</div>
+        <h3>Install</h3>
+        <p>Your distribution</p>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     DOWNLOAD
+========================================================= -->
+
+<section class="section cream">
+
+  <div class="container detail">
+
+    <div class="detail-label">
+      <div class="number">01 / ONE</div>
+      <h2>Download</h2>
+    </div>
+
+    <div class="detail-copy">
+
+      <h3>Bootable disk image.</h3>
+
+      <p>
+        BcalcOS is available in one configuration with one ISO.
+	<br><br>
+	Click to download the ISO and the checksum.
+      </p>
+
+      <div class="buttons">
+        <a class="btn" href="https://sourceforge.net/projects/bcalcos-linux/files/">Download ISO</a>
+      </div>
+
+      <p>
+	<br>
+	Compare the checksum values to verify the download is intact and unmodified.
+	<br><br>
+	Open a terminal in the folder where both files were saved:  
+	<br>
+	sha256sum -c bcalcos-20260820_1003.iso.sha256
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     WRITE
+========================================================= -->
+
+<section class="section white">
+
+  <div class="container detail">
+
+    <div class="detail-label">
+      <div class="number">02 / FLASH</div>
+      <h2>Write</h2>
+    </div>
+
+
+    <div class="detail-copy">
+
+      <h3>Write the ISO to the USB.</h3>
+
+      <p>
+	Obtain a USB stick with at least 8 GB space.  Be sure to transfer any files you wish to keep as the USB will be erased and formatted as part of this process.
+      </p>
+
+      <p>
+        Perhaps the easiest way to flash the USB is to use a program called balenaEtcher.
+      </p>
+
+      <div class="buttons">
+        <a class="btn" href="https://etcher.balena.io/">balenaEtcher</a>
+      </div>
+
+      <p>
+	<br>
+	1. Plug the USB flash drive into your computer.
+	<br><br>	
+	2. Double-click on the downloaded balenaEtcher file to launch the program. 
+	<br><br>	
+	3. Press the first button "Flash from file" and select the previously downloaded ISO file:  bcalcos-20260820_1003.iso. 
+	<br><br>
+	4. Click the second button "Select target" and choose the USB drive from list.  Confirm you have selected the correct drive.
+	<br><br>
+	5. Press the final button "Flash!" to write BcalcOS to the USB stick.
+	<br><br>	
+	6. The application will inform you when complete.  
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- =========================================================
+     BOOT
+========================================================= -->
+
+<section class="section cream">
+
+  <div class="container detail">
+
+    <div class="detail-label">
+      <div class="number">03 / BIOS</div>
+      <h2>Boot</h2>
+    </div>
+
+
+    <div class="detail-copy">
+
+      <h3>Boot from the USB stick.</h3>
+
+      <p>
+ 	To test BcalcOS, you have to boot your computer from the just created USB drive.
+	<br>
+	1. Turn off your computer.
+	<br><br>
+	2. Plug the USB stick into the computer.
+	<br><br>
+	3. Turn on the computer. Then immediately begin repeatedly tapping the Boot Menu key. <br>
+	Potential keys: Acer F12, Esc | Asus F8, Esc | Dell F12 | HP F9, ESC | Lenovo F8, F10, F12 | Samsung F2, F12, Esc | Sony F10, F11, Esc 
+	<br><br>
+	4. Once in the Boot Menu, highlight the option which mentions “USB”, “EFI”, or the flash drive manufacturer’s name. Press Enter to boot from the USB.
+	<br><br>
+	5. Select the first option which is BcalcOS (default) from the grub bootloader menu.
+	<br><br>
+	6. Your test instance should now load.
+      	</p>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     TEST
+========================================================= -->
+
+<section class="section white">
+
+  <div class="container detail">
+
+    <div class="detail-label">
+      <div class="number">04 / DRIVE</div>
+      <h2>Test</h2>
+    </div>
+
+
+    <div class="detail-copy">
+
+      <h3>Kick the tires.</h3>
+
+      <p>
+	You are now running a test instance of the BcalcOS Linux.
+	<br><br>
+	Look around.  Try out applications.  Customize the desktop.  Remember though, the distribution is running from the USB stick so response time will likely be slow.
+	<br><br>
+	Move to the next step to install.  If you decide not to install, then simply select shutdown and remove the USB.  No changes have been made to your machine.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     INSTALL
+========================================================= -->
+
+<section class="section cream">
+
+  <div class="container detail">
+
+    <div class="detail-label">
+      <div class="number">05 / 5X5</div>
+      <h2>Install</h2>
+    </div>
+
+
+    <div class="detail-copy">
+
+      <h3>In the pipe.</h3>
+
+      <p>
+	To install, double click on the "Install BcalcOS Linux" icon on the desktop. 
+	BcalcOS uses a custom, terminal based application to perform the installation.  Both the standard Devuan live-boot and Refracta Installers repeatedly failed on one of the test machines so instead BcalcOS ships with this streamlined installer.
+	<br><br>
+	<span class="gold">***EXISTING DATA ON THE DRIVE WILL BE ERASED.***</span>
+	<br><br>
+	1. The majority of the installation decisions are made automatically.  Future versions will offer more user options.
+	<br><br>
+	2. For now, you only need to select the disk for installation and your timezone and then provide a username and password.  
+	<br><br>
+	3. Your distro will have 4 partitions:  BIOS or UEFI, root (operating system), swap, and home.  The partition sizes are dynamically determined based on your RAM and disk space.
+	<br><br>
+	4. Your created user will be sudo.  Root will be disabled.
+	<br><br>
+	5. And that's it.  When the installation is finished, enter Y to reboot.  Remove the USB.	
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     PHILOSOPHY / DOWNLOAD
+========================================================= -->
+
+<section class="final-section" id="choices">
+
+  <div class="container final-grid">
+
+    <div class="principles">
+
+      <div class="principles-title">
+        Installation.
+      </div>
+
+      <p>
+        The process to install BcalcOS is relatively straightforward.
+      </p>
+
+      <ul>
+        <li>Backup your data.  Just do it.</li>
+        <li>Write the ISO to a USB.</li>
+        <li>Start the installation by clicking the desktop icon.</li>
+        <li>When in doubt, just start pressing random buttons. /s</li>
+      </ul>
+
+    </div>
+
+    <div class="final-download" id="download">
+
+      <div class="kicker">Ready to try?</div>
+
+      <h2>Download Bcalc<span class="gold">OS</span>.</h2>
+
+      <p>
+        Give it a spin.  Risk free.
+      </p>
+
+      <div class="buttons" style="justify-content:center">
+        <a class="btn" href="index.html">BcalcOS</a>
+        <a class="btn" href="https://sourceforge.net/projects/bcalcos-linux/files/">Download ISO</a>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+</main>
+
+
+<footer>
+  <div class="container footer">
+    <div class="footer-brand">
+      Bcalc<span class="gold">OS</span>
+    </div>
+
+    <div>
+      Copyright 2026 All rights reserved.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
