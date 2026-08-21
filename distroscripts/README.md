@@ -21,7 +21,9 @@ Location:  /etc/fonts/local.conf
 Base Devuan is pretty light on fonts but there were still a few too many. 
 
 To restore a font: simply erase the approporate row.
-To completely remove the file: use sudo rm /etc/fonts/local.conf 
+
+To completely remove the file: use sudo rm /etc/fonts/local.conf
+
 Then rebuild the font cache: sudo fc-cache -f -v
 
 ---
