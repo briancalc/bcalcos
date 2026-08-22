@@ -28,8 +28,11 @@ Essential Commands:
 - gocryptfs -init ~/crypt/encrypt (just once, set password) 
 - gocryptfs ~/crypt/encrypt ~/crypt/decrypt (mount)
 - fusermount -u /home/crypt/decrypt (unmount)
-may want to add to .bash_aliases so can use 
+
+may want to add to .bash_aliases so can use
+
 crypt mount and crypt unmount rather than full commands
+
 crypt ( ) { 
     case "$1" in
         mount)
