@@ -44,7 +44,7 @@ Can be run at user's discretion via application menu under Accessories.
 
 Name:  quail_calc
 
-Location:  /usr/bib/quail_calc
+Location:  /usr/bin/quail_calc
 
 Simple GUI calculator.
 
