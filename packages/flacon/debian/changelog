@@ -1,0 +1,7 @@
+flacon (13.0.2-1) bobwhite; urgency=medium
+
+  * Initial BcalcOS Flacon package.
+  * Package Flacon 13.0.2 for BcalcOS.
+  * Build against the Devuan Qt 6 stack.
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Sun, 30 Aug 2026 00:00:00 +0000

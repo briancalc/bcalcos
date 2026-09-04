@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quail Calc
+Exec=/usr/bin/quail_calc
+Icon=/usr/share/bcalcosbrand/standing.icon
+Terminal=false
+Categories=Utility;Calculator;

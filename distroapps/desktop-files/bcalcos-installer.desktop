@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Install BcalcOS
+Comment=Install BcalcOS Linux to your hard drive
+Exec=xfce4-terminal -e "sudo /usr/bin/bcalcos-install --install"
+Icon=/usr/share/bcalcosbrand/quail_splash2.png
+Terminal=true
+Type=Application
+Categories=System;Utility;

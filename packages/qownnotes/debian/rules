@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	qmake6 QOwnNotes.pro
+
+override_dh_auto_build:
+	$(MAKE) -j$(shell nproc)
+
+override_dh_auto_install:
+	$(MAKE) install INSTALL_ROOT=$(CURDIR)/debian/qownnotes
+
+override_dh_auto_clean:
+	$(MAKE) clean || true
+	dh_auto_clean

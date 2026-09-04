@@ -1,0 +1,23 @@
+/* @theme inter-letter-portrait */
+
+@import 'default';
+
+section {
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  width: 8.5in;
+  height: 11in;
+
+  padding: 0.25in;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  text-align: left;
+}
+
+

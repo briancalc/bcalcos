@@ -1,0 +1,30 @@
+#!/bin/sh
+#apt-updates-notify
+#daily check for updates
+#v1.0
+#
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+notify_user() {
+    u="$1"
+    title="$2"
+    body="$3"
+
+    uid=$(id -u "$u" 2>/dev/null) || return
+    runtime="/run/user/$uid"
+    bus="$runtime/bus"
+
+    [ -S "$bus" ] || return
+
+    su - "$u" -c "env XDG_RUNTIME_DIR='$runtime' DBUS_SESSION_BUS_ADDRESS='unix:path=$bus' notify-send -u normal '$title' '$body'" 2>/dev/null
+}
+
+logged_in_users=$(who | awk '{print $1}' | sort -u)
+[ -n "$logged_in_users" ] || exit 0
+
+apt_count=$(apt list --upgradable 2>/dev/null | awk 'NR>1 && $1!="" {c++} END {print c+0}')
+
+for u in $logged_in_users; do
+    [ "$apt_count" -gt 0 ] && \
+        notify_user "$u" "Apt updates available" "$apt_count package(s) can be upgraded"
+done

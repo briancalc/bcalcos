@@ -1,0 +1,14 @@
+#!/bin/bash
+# /usr/bin/bcalcos-install
+# BCalcOS Linux Installer - Wrapper Script
+# v1.0
+
+INSTALLER="/usr/lib/bcalcos-installer/installer.sh"
+
+if [[ ! -x "$INSTALLER" ]]; then
+    echo "ERROR: Installer not found at $INSTALLER"
+    exit 1
+fi
+
+# Execute the main installer with all arguments passed through
+exec "$INSTALLER" "$@"

@@ -1,0 +1,20 @@
+#!/bin/sh
+#set -e
+#
+#TARGETS="
+#/etc/skel/.config/Mousepad/accels.scm
+#/etc/skel/.config/Thunar/accels.scm
+#/etc/skel/.config/xfce4/desktop/accels.scm
+#/etc/skel/.config/xfce4/panel/launcher-1/17883128575.desktop
+#/etc/skel/.config/xfce4/panel/launcher-23/17883128414.desktop
+#/etc/skel/.config/xfce4/panel/launcher-24/17883128263.desktop
+#/etc/skel/.config/xfce4/panel/launcher-26/17883128916.desktop
+#"
+#
+#for path in $TARGETS; do
+#    if [ -d "$path" ]; then
+#        rm -rf "$path"
+#    fi
+#done
+#
+#exit 0

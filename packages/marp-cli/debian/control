@@ -1,0 +1,14 @@
+Source: marp-cli
+Section: utils
+Priority: optional
+Maintainer: BcalcOS Linux <bcalcos@bcalcos.org>
+Standards-Version: 4.7.0
+Build-Depends: debhelper-compat (= 13)
+Rules-Requires-Root: no
+Homepage: https://github.com/marp-team/marp-cli
+
+Package: marp-cli
+Architecture: amd64
+Description: CLI interface for Marp and Marpit based converters
+ Marp CLI converts Marp and Marpit Markdown files into HTML, PDF,
+ PowerPoint presentations, and images.

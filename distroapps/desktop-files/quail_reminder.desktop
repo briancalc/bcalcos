@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quail Reminder
+Exec=/usr/bin/quail-reminder
+Icon=org.xfce.panel.clock
+Terminal=false
+Categories=Utility

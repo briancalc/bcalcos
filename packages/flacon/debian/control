@@ -1,0 +1,26 @@
+Source: flacon
+Section: sound
+Priority: optional
+Maintainer: BcalcOS Linux <bcalcos@bcalcos.org>
+Standards-Version: 4.7.0
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake,
+ g++,
+ pkg-config,
+ qt6-base-dev,
+ qt6-tools-dev,
+ libuchardet-dev,
+ libtag1-dev,
+ libc6-dev
+Rules-Requires-Root: no
+Homepage: https://github.com/flacon/flacon
+
+Package: flacon
+Architecture: amd64
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends}
+Description: audio file encoder and CUE splitter
+ Flacon extracts individual tracks from a large audio file using
+ CUE information and encodes them into separate audio files.

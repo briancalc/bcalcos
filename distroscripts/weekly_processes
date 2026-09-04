@@ -1,0 +1,4 @@
+SHELL=/bin/sh
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+0 13 * * 0 root /usr/sbin/weekly-fstrim

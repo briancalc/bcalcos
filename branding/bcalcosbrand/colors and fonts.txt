@@ -1,0 +1,30 @@
+# ============================================================
+# BcalcOS COLOR PALETTE
+# ============================================================
+
+COLOR_PRIMARY = "#BA7800" warm brown/orange
+COLOR_PRIMARY_DARK = "#8A5A00" darker brown/orange
+COLOR_PRIMARY_LIGHT = "#D99A28" light orange
+COLOR_PRIMARY_LIGHT_LIGHT = "#EBC978" amber
+
+COLOR_BG = "#F5F6F8" very light gray
+COLOR_SURFACE = "#FFFFFF" pure white
+COLOR_SURFACE_ALT = "#FBF9F5" off-white/ cream
+
+COLOR_TEXT = "#2C3E50" dark blue-gray
+COLOR_TEXT_MUTED = "#68717A" medium blue-gray
+COLOR_TEXT_LIGHT = "#9299A0" light blue-gray
+
+COLOR_BORDER = "#E2E5E8" light gray
+COLOR_BORDER_GOLD = "#E5C88F" light tan/ beige
+
+COLOR_INSTALLED = "#2E8B57" sea green
+COLOR_INSTALLED_BG = "#EEF8F2"
+
+COLOR_DISABLED = "#F0F1F2" very light gray
+
+COLOR_WHITE = "#FFFFFF" pure white
+
+FONT_PRIMARY = "INTER"
+FONT_HEADING = "POPPINS"
+FONT_MONO = "MONOSPACE"

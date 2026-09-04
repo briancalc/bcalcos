@@ -1,0 +1,2882 @@
+#!/usr/bin/env python3
+"""
+BcalcOS Welcome Center
+v1.0
+
+Features:
+- Branded BcalcOS splash screen
+- Native 449x641 quail artwork
+- Application installation launcher
+- Application removal with autoremove cleanup
+- System actions
+- Documentation shortcuts
+- User creation dialog
+- GTK/CSS-based visual design
+- No shell=True for privileged operations
+- Uses pkexec for graphical privilege escalation
+"""
+
+import os
+import signal
+import subprocess
+import threading
+import sys
+
+sys.path.insert(0, '/usr/lib/bcalcos-welcome')
+from bcalcos_wel_detect import detect_all_statuses, PACKAGE_MAP, DOCS_URLS
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
+
+from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Pango
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+APP_NAME = "BcalcOS Welcome Center"
+
+ICON_PATH = "/usr/share/bcalcosbrand/quail_splash2.png"
+MANUAL_PATH = "/usr/share/bcalcosbrand/bcalcos-manual.txt"
+
+# Native artwork dimensions.
+ICON_WIDTH = 449
+ICON_HEIGHT = 641
+
+
+# ============================================================
+# APPLICATION CONFIGURATION
+# ============================================================
+
+APPS_CONFIG = {
+	"Office": [
+		("Gnumeric", None),
+		("AbiWord", None),
+		("LibreOffice", None),
+		("Screenshot", None),
+		("MousePad", None),
+		("Marp", None),
+		("Atril", None),
+		("PDF Arranger", None),
+	],
+
+	"Media": [
+		("GIMP", None),
+		("OBS Studio", None),
+		("VLC", None),
+		("Audacity", None),
+		("mtpaint", None),
+		("Ristretto", None),
+		("Inkscape", None),
+		("Darktable", None),
+	],
+
+	"System": [
+		("GParted", None),
+		("BackinTime", None),
+		("KeePassXC", None),
+		("gocryptfs", None),
+		("Settings", None),
+		("ClamAV", None),
+		("WireGuard", None),
+		("Task Manager", None),
+	],
+
+	"Process & Documentation": [
+		("Run Updates", None),
+		("Keyboard Layout", None),
+		("Create New User", None),
+		("Devuan Website", None),
+		("AppArmor Userdoc", None),
+		("WireGuard Quick Start", None),
+		("UFW Help Wiki", None),
+		("ClamAV Userdoc", None),
+	],
+}
+
+
+PACKAGE_MAP = {
+	"Gnumeric": "gnumeric",
+	"AbiWord": "abiword",
+	"LibreOffice": "libreoffice",
+	"Marp": "marp",
+	"Screenshot": "xfce4-screenshooter",
+	"MousePad": "mousepad",
+	"mtpaint": "mtpaint",
+	"Ristretto": "ristretto",
+	"GIMP": "gimp",
+	"OBS Studio": "obs-studio",
+	"VLC": "vlc",
+	"Audacity": "audacity",
+	"GParted": "gparted",
+	"BackinTime": "backintime-qt",
+	"KeePassXC": "keepassxc",
+	"gocryptfs": "gocryptfs",
+	"ClamAV": "clamav",
+	"WireGuard": "wireguard",
+	"Task Manager": "xfce4-taskmanager",
+	"Atril": "atril",
+	"PDF Arranger": "pdfarranger",
+	"Inkscape": "inkscape",
+	"Darktable": "darktable",
+}
+
+DOCS_URLS = {
+	"Devuan Website": "https://www.devuan.org/os/community",
+	"AppArmor Userdoc": "https://wiki.debian.org/AppArmor",
+	"WireGuard Quick Start": "https://www.wireguard.com/quickstart/",
+	"UFW Help Wiki": "https://help.ubuntu.com/community/UFW",
+	"ClamAV Userdoc": "https://docs.clamav.net/",
+}
+
+#####add keyboard selection support####
+KEYBOARD_LAYOUTS = {
+	"English (US)": "us",
+	"English (UK)": "gb",
+	"French": "fr",
+	"German": "de",
+	"Spanish": "es",
+	"Italian": "it",
+	"Portuguese": "pt",
+	"Dutch": "nl",
+	"Russian": "ru",
+	"Arabic": "ar",
+	"Indian": "in",
+	"Japanese": "jp",
+	"Chinese": "cn",
+	"Korean": "kr",
+}
+
+# ============================================================
+# BcalcOS COLOR PALETTE
+# ============================================================
+
+COLOR_PRIMARY = "#BA7800"
+COLOR_PRIMARY_DARK = "#8A5A00"
+COLOR_PRIMARY_LIGHT = "#D99A28"
+
+COLOR_BG = "#F5F6F8"
+COLOR_SURFACE = "#FFFFFF"
+COLOR_SURFACE_ALT = "#FBF9F5"
+
+COLOR_TEXT = "#2C3E50"
+COLOR_TEXT_MUTED = "#68717A"
+COLOR_TEXT_LIGHT = "#9299A0"
+
+COLOR_BORDER = "#E2E5E8"
+COLOR_BORDER_GOLD = "#E5C88F"
+
+COLOR_INSTALLED = "#2E8B57"
+COLOR_INSTALLED_BG = "#EEF8F2"
+
+COLOR_REMOVE = "#2C3E50"
+
+COLOR_DISABLED = "#F0F1F2"
+
+COLOR_WHITE = "#FFFFFF"
+
+
+# ============================================================
+# ICONS
+# ============================================================
+
+ICON_NAMES = {
+	"Gnumeric": "x-office-spreadsheet-symbolic",
+	"AbiWord": "x-office-document-symbolic",
+	"LibreOffice": "x-office-document",
+	"Marp": "x-office-presentation-symbolic",
+	"Atril": "x-office-document-symbolic",
+	"PDF Arranger": "view-paged-symbolic",
+	"Screenshot": "camera-photo-symbolic",
+	"MousePad": "accessories-text-editor-symbolic",
+	"GIMP": "applications-graphics-symbolic",
+	"mtpaint": "applications-graphics-symbolic",
+	"Ristretto": "image-x-generic-symbolic",
+	"Inkscape": "applications-graphics-symbolic",
+	"Darktable": "camera-photo-symbolic",
+	"OBS Studio": "camera-web-symbolic",
+	"VLC": "multimedia-player-symbolic",
+	"Audacity": "multimedia-player-symbolic",
+	"Run Updates": "system-software-update-symbolic",
+	"Create New User": "system-users-symbolic",
+	"GParted": "drive-harddisk-symbolic",
+	"BackinTime": "document-save-symbolic",
+	"KeePassXC": "dialog-password-symbolic",
+	"gocryptfs": "changes-allow-symbolic",
+	"Keyboard Layout": "input-keyboard-symbolic",
+	"Settings": "preferences-system-symbolic",
+	"ClamAV": "security-high-symbolic",
+	"WireGuard": "network-vpn-symbolic",
+	"BcalcOS Website": "help-browser-symbolic",
+	"Devuan Website": "help-browser-symbolic",
+	"AppArmor Userdoc": "security-high-symbolic",
+	"WireGuard Quick Start": "network-server-symbolic",
+	"Task Manager": "utilities-system-monitor-symbolic",
+	"UFW Help Wiki": "network-transmit-receive-symbolic",
+	"ClamAV Userdoc": "dialog-warning-symbolic",
+}
+
+
+# ============================================================
+# CSS
+# ============================================================
+
+MAIN_CSS = f"""
+window {{
+	background-color: {COLOR_BG};
+	color: {COLOR_TEXT};
+}}
+
+.applications-title {{
+	color: {COLOR_PRIMARY_DARK};
+	font-family: Poppins, sans-serif;
+	font-size: 38px;
+	font-weight: 700;
+}}
+
+.applications-subtitle {{
+	color: {COLOR_TEXT_MUTED};
+	font-family: Inter, sans-serif;
+	font-size: 18px;
+}}
+
+.header-panel {{
+	background-color: {COLOR_SURFACE};
+	border: 1px solid {COLOR_BORDER};
+	border-radius: 16px;
+	padding: 20px;
+}}
+
+.header-accent {{
+	background-color: {COLOR_PRIMARY};
+	min-width: 5px;
+	border-radius: 3px;
+}}
+
+.brand-name {{
+	color: {COLOR_TEXT};
+	font-family: Poppins, sans-serif;
+	font-size: 40px;
+	font-weight: 700;
+}}
+
+.brand-subtitle {{
+	color: {COLOR_TEXT_MUTED};
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+}}
+
+.category-card {{
+	background-color: {COLOR_SURFACE};
+	border: 1px solid {COLOR_BORDER};
+	border-radius: 16px;
+	padding: 4px;
+}}
+
+.category-card:hover {{
+	border-color: {COLOR_BORDER_GOLD};
+}}
+
+.category-header {{
+	background-color: {COLOR_SURFACE_ALT};
+	color: {COLOR_TEXT};
+	font-family: Poppins, sans-serif;
+	font-size: 30px;
+	font-weight: 700;
+	padding: 12px 16px;
+	border-radius: 12px;
+}}
+
+.category-header-accent {{
+	background-color: {COLOR_PRIMARY};
+	min-height: 4px;
+	border-radius: 2px;
+}}
+
+.app-button {{
+	background-color: {COLOR_SURFACE};
+	border: 1px solid {COLOR_BORDER};
+	border-radius: 12px;
+	padding: 13px;
+	min-height: 72px;
+}}
+
+.app-button:hover {{
+	background-color: #FFFDF8;
+	border-color: {COLOR_PRIMARY_LIGHT};
+}}
+
+.app-button:active {{
+	background-color: #F7EEDC;
+}}
+
+.app-button:disabled {{
+	background-color: {COLOR_DISABLED};
+	border-color: #E5E7E9;
+}}
+
+.app-icon-box {{
+	background-color: #FBF5E9;
+	border: 1px solid #EBD7AD;
+	border-radius: 10px;
+	min-width: 48px;
+	min-height: 48px;
+}}
+
+.app-icon {{
+	color: {COLOR_PRIMARY_DARK};
+}}
+
+.app-name {{
+	color: {COLOR_TEXT};
+	font-family: Inter, sans-serif;
+	font-size: 20px;
+	font-weight: 600;
+}}
+
+.app-description {{
+	color: {COLOR_TEXT_MUTED};
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+}}
+
+.status-installed {{
+	color: {COLOR_INSTALLED};
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+	font-weight: 600;
+}}
+
+.status-click {{
+	color: {COLOR_PRIMARY};
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+	font-weight: 600;
+}}
+
+.status-action {{
+	color: {COLOR_TEXT_MUTED};
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+}}
+
+.status-placeholder {{
+	color: {COLOR_TEXT_LIGHT};
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+}}
+
+.footer {{
+	color: {COLOR_TEXT_LIGHT};
+	font-family: Inter, sans-serif;
+	font-size: 18px;
+}}
+
+.scroll-window {{
+	background-color: transparent;
+}}
+
+.splash-window {{
+	background-color: {COLOR_PRIMARY_DARK};
+	border: 2px solid {COLOR_PRIMARY_LIGHT};
+	border-radius: 22px;
+}}
+
+.splash-accent {{
+	background-color: {COLOR_PRIMARY};
+	border-radius: 100px;
+}}
+
+.splash-welcome {{
+	color: {COLOR_WHITE};
+	font-family: Poppins, sans-serif;
+	font-size: 42px;
+	font-weight: 600;
+}}
+
+.splash-title {{
+	color: {COLOR_WHITE};
+	font-family: Poppins, sans-serif;
+	font-size: 68px;
+	font-weight: 700;
+}}
+
+.splash-subtitle {{
+	color: #F4DFC0;
+	font-family: Inter, sans-serif;
+	font-size: 21px;
+}}
+
+.splash-tagline {{
+	color: #F8EBD5;
+	font-family: Inter, sans-serif;
+	font-size: 17px;
+}}
+
+.progress-bar {{
+	min-height: 6px;
+}}
+
+.progress-bar trough {{
+	background-color: rgba(255,255,255,0.18);
+	border-radius: 4px;
+}}
+
+.progress-bar progress {{
+	background-color: {COLOR_PRIMARY_LIGHT};
+	border-radius: 4px;
+}}
+
+.dialog-title {{
+	font-family: Poppins, sans-serif;
+	font-size: 24px;
+	font-weight: 600;
+}}
+
+.dialog-label {{
+	font-family: Inter, sans-serif;
+	font-size: 15px;
+}}
+
+.dialog-entry {{
+	font-family: Inter, sans-serif;
+	font-size: 15px;
+}}
+"""
+
+
+# ============================================================
+# CSS INSTALLATION
+# ============================================================
+
+def install_css():
+	provider = Gtk.CssProvider()
+	provider.load_from_data(MAIN_CSS.encode("utf-8"))
+
+	screen = Gdk.Screen.get_default()
+
+	Gtk.StyleContext.add_provider_for_screen(
+		screen,
+		provider,
+		Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+	)
+
+
+# ============================================================
+# SPLASH SCREEN
+# ============================================================
+
+class SplashScreen(Gtk.Window):
+
+	def __init__(self, parent_app):
+		super().__init__(title="BcalcOS")
+
+		self.parent_app = parent_app
+		self.elapsed = 0.0
+		self.duration = 6.0
+
+		self.set_decorated(False)
+		self.set_resizable(False)
+		self.set_position(Gtk.WindowPosition.CENTER)
+		self.set_default_size(950, 560)
+
+		self.get_style_context().add_class("splash-window")
+
+		self._build_ui()
+
+		self.timer_id = GLib.timeout_add(
+			40,
+			self._tick,
+		)
+
+	def _build_ui(self):
+
+		outer = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=0,
+		)
+
+		outer.set_margin_start(34)
+		outer.set_margin_end(34)
+		outer.set_margin_top(30)
+		outer.set_margin_bottom(30)
+
+		self.add(outer)
+
+		# ----------------------------------------------------
+		# Decorative upper accent
+		# ----------------------------------------------------
+
+		accent = Gtk.Box()
+		accent.set_size_request(150, 8)
+		accent.set_halign(Gtk.Align.CENTER)
+		accent.get_style_context().add_class("splash-accent")
+
+		outer.pack_start(
+			accent,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# Main splash composition
+		# ----------------------------------------------------
+
+		content = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=45,
+		)
+
+		content.set_halign(Gtk.Align.CENTER)
+		content.set_valign(Gtk.Align.CENTER)
+		content.set_vexpand(True)
+
+		outer.pack_start(
+			content,
+			True,
+			True,
+			10,
+		)
+
+		# ----------------------------------------------------
+		# Artwork
+		# ----------------------------------------------------
+
+		artwork_box = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+		)
+
+		artwork_box.set_size_request(
+			300,
+			410,
+		)
+
+		artwork_box.set_halign(Gtk.Align.CENTER)
+		artwork_box.set_valign(Gtk.Align.CENTER)
+
+		try:
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+				ICON_PATH,
+				ICON_WIDTH,
+				ICON_HEIGHT,
+				True,
+			)
+
+			# Scale down for the splash while preserving
+			# the original 449x641 aspect ratio.
+			scale = min(
+				290 / pixbuf.get_width(),
+				400 / pixbuf.get_height(),
+			)
+
+			width = int(pixbuf.get_width() * scale)
+			height = int(pixbuf.get_height() * scale)
+
+			pixbuf = pixbuf.scale_simple(
+				width,
+				height,
+				GdkPixbuf.InterpType.BILINEAR,
+			)
+
+			image = Gtk.Image.new_from_pixbuf(pixbuf)
+
+		except Exception:
+			image = Gtk.Label(label="BcalcOS")
+			image.get_style_context().add_class("splash-title")
+
+		artwork_box.pack_start(
+			image,
+			True,
+			True,
+			0,
+		)
+
+		content.pack_start(
+			artwork_box,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# Right side text
+		# ----------------------------------------------------
+
+		text_box = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=7,
+		)
+
+		text_box.set_valign(Gtk.Align.CENTER)
+		text_box.set_halign(Gtk.Align.START)
+
+		welcome = Gtk.Label(label="Welcome! \n")
+		welcome.set_halign(Gtk.Align.START)
+		welcome.get_style_context().add_class("splash-welcome")
+
+		title = Gtk.Label(label="BcalcOS")
+		title.set_halign(Gtk.Align.START)
+		title.get_style_context().add_class("splash-title")
+
+		subtitle = Gtk.Label(
+			label="Be systemd free. Be XLibre. Be groovy."
+		)
+		subtitle.set_halign(Gtk.Align.START)
+		subtitle.get_style_context().add_class("splash-subtitle")
+
+		text_box.pack_start(
+			welcome,
+			False,
+			False,
+			0,
+		)
+
+		text_box.pack_start(
+			title,
+			False,
+			False,
+			0,
+		)
+
+		text_box.pack_start(
+			subtitle,
+			False,
+			False,
+			12,
+		)
+
+		content.pack_start(
+			text_box,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# Bottom message
+		# ----------------------------------------------------
+
+		bottom_box = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=10,
+		)
+
+		bottom_box.set_halign(Gtk.Align.FILL)
+
+		tagline = Gtk.Label(
+			label="Based on Devuan Excalibur."
+		)
+
+		tagline.set_halign(Gtk.Align.CENTER)
+		tagline.get_style_context().add_class("splash-tagline")
+
+		bottom_box.pack_start(
+			tagline,
+			False,
+			False,
+			0,
+		)
+
+		# Progress bar
+		self.progress = Gtk.ProgressBar()
+		self.progress.set_fraction(0.0)
+		self.progress.set_show_text(False)
+		self.progress.get_style_context().add_class("progress-bar")
+
+		bottom_box.pack_start(
+			self.progress,
+			False,
+			False,
+			0,
+		)
+
+		outer.pack_start(
+			bottom_box,
+			False,
+			False,
+			0,
+		)
+
+	def _tick(self):
+
+		self.elapsed += 0.05
+
+		fraction = min(
+			self.elapsed / self.duration,
+			1.0,
+		)
+
+		self.progress.set_fraction(fraction)
+
+		if fraction >= 1.0:
+			self.hide()
+
+			if self.timer_id:
+				GLib.source_remove(self.timer_id)
+				self.timer_id = None
+
+			self.parent_app.show_main_window()
+
+			return False
+
+		return True
+
+
+# ============================================================
+# MAIN APPLICATION
+# ============================================================
+
+class WelcomeApp(Gtk.Window):
+
+	def __init__(self):
+
+		super().__init__(
+			title=APP_NAME,
+		)
+
+		self.connect(
+			"destroy",
+			Gtk.main_quit,
+		)
+
+		self.set_default_size(
+			1350,
+			1060,
+		)
+
+		self.set_position(
+			Gtk.WindowPosition.CENTER,
+		)
+
+		self.installed_status = detect_all_statuses(APPS_CONFIG)
+
+		self.app_buttons = {}
+
+		self._build_ui()
+
+	# ========================================================
+	# MAIN UI
+	# ========================================================
+
+	def _build_ui(self):
+
+		outer = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=18,
+		)
+
+		outer.set_margin_start(28)
+		outer.set_margin_end(28)
+		outer.set_margin_top(24)
+		outer.set_margin_bottom(20)
+
+		self.add(outer)
+
+		# ----------------------------------------------------
+		# Header
+		# ----------------------------------------------------
+
+		header_panel = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=18,
+		)
+
+		header_panel.set_halign(Gtk.Align.FILL)
+		header_panel.get_style_context().add_class(
+			"header-panel"
+		)
+
+		accent = Gtk.Box()
+		accent.set_size_request(5, -1)
+		accent.get_style_context().add_class(
+			"header-accent"
+		)
+
+		header_panel.pack_start(
+			accent,
+			False,
+			False,
+			0,
+		)
+
+		# Small brand icon
+		try:
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+				ICON_PATH,
+				82,
+				82,
+				True,
+			)
+
+			brand_image = Gtk.Image.new_from_pixbuf(
+				pixbuf
+			)
+
+		except Exception:
+			brand_image = Gtk.Image.new_from_icon_name(
+				"computer-symbolic",
+				Gtk.IconSize.DIALOG,
+			)
+
+		header_panel.pack_start(
+			brand_image,
+			False,
+			False,
+			0,
+		)
+
+		title_box = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=2,
+		)
+
+		brand = Gtk.Label(
+			label="BcalcOS Welcome Center"
+		)
+
+		brand.set_halign(Gtk.Align.START)
+		brand.get_style_context().add_class(
+			"brand-name"
+		)
+
+		brand_subtitle = Gtk.Label(
+			label="Within a socialist community there is no room left for freedom. - LvM"
+		)
+
+		brand_subtitle.set_halign(Gtk.Align.START)
+		brand_subtitle.get_style_context().add_class(
+			"brand-subtitle"
+		)
+
+		title_box.pack_start(
+			brand,
+			False,
+			False,
+			0,
+		)
+
+		title_box.pack_start(
+			brand_subtitle,
+			False,
+			False,
+			0,
+		)
+
+		header_panel.pack_start(
+			title_box,
+			False,
+			False,
+			0,
+		)
+
+		outer.pack_start(
+			header_panel,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# ----------------------------------------------------
+		# RESOURCES heading
+		# ----------------------------------------------------
+
+		title_section = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=4,
+		)
+
+		applications_title = Gtk.Label(
+			label="RESOURCES"
+		)
+
+		applications_title.set_halign(
+			Gtk.Align.START
+		)
+
+		applications_title.get_style_context().add_class(
+			"applications-title"
+		)
+
+		title_section.pack_start(
+			applications_title,
+			False,
+			False,
+			0,
+		)
+
+		applications_subtitle = Gtk.Label(
+			label="Choose applications and tools to get started."
+		)
+
+		applications_subtitle.set_halign(
+			Gtk.Align.START
+		)
+
+		applications_subtitle.get_style_context().add_class(
+			"applications-subtitle"
+		)
+
+		title_section.pack_start(
+			applications_subtitle,
+			False,
+			False,
+			0,
+		)
+
+		outer.pack_start(
+			title_section,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# Scrollable content
+		# ----------------------------------------------------
+
+		scrolled = Gtk.ScrolledWindow()
+
+		scrolled.set_policy(
+			Gtk.PolicyType.NEVER,
+			Gtk.PolicyType.AUTOMATIC,
+		)
+
+		scrolled.set_vexpand(True)
+		scrolled.get_style_context().add_class(
+			"scroll-window"
+		)
+
+		outer.pack_start(
+			scrolled,
+			True,
+			True,
+			0,
+		)
+
+		content = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=18,
+		)
+
+		content.set_margin_top(4)
+		content.set_margin_bottom(8)
+
+		scrolled.add(content)
+
+		# ----------------------------------------------------
+		# Office + Media
+		# ----------------------------------------------------
+
+		major_grid = Gtk.Grid()
+
+		major_grid.set_column_homogeneous(True)
+		major_grid.set_column_spacing(18)
+
+		office_card = self._create_category_card(
+			"Office"
+		)
+
+		graphics_card = self._create_category_card(
+			"Media"
+		)
+
+		major_grid.attach(
+			office_card,
+			0,
+			0,
+			1,
+			1,
+		)
+
+		major_grid.attach(
+			graphics_card,
+			1,
+			0,
+			1,
+			1,
+		)
+
+		content.pack_start(
+			major_grid,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# System + Documentation
+		# ----------------------------------------------------
+
+		lower_grid = Gtk.Grid()
+
+		lower_grid.set_column_homogeneous(True)
+		lower_grid.set_column_spacing(18)
+
+		system_card = self._create_category_card(
+			"System"
+		)
+
+		documentation_card = self._create_category_card(
+			"Process & Documentation"
+		)
+
+		lower_grid.attach(
+			system_card,
+			0,
+			0,
+			1,
+			1,
+		)
+
+		lower_grid.attach(
+			documentation_card,
+			1,
+			0,
+			1,
+			1,
+		)
+
+		content.pack_start(
+			lower_grid,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# Footer
+		# ----------------------------------------------------
+
+		footer = Gtk.Label(
+			label="Administrative privileges may be required for installation and system changes."
+		)
+
+		footer.set_halign(
+			Gtk.Align.CENTER
+		)
+
+		footer.get_style_context().add_class(
+			"footer"
+		)
+
+		outer.pack_start(
+			footer,
+			False,
+			False,
+			0,
+		)
+
+	# ========================================================
+	# CATEGORY CARD
+	# ========================================================
+
+	def _create_category_card(self, category_name):
+
+		frame = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=10,
+		)
+
+		frame.get_style_context().add_class(
+			"category-card"
+		)
+
+		# Category header
+		header = Gtk.Label(
+			label=category_name
+		)
+
+		header.set_halign(
+			Gtk.Align.FILL
+		)
+
+		header.set_xalign(0)
+
+		header.get_style_context().add_class(
+			"category-header"
+		)
+
+		frame.pack_start(
+			header,
+			False,
+			False,
+			0,
+		)
+
+		# Small gold accent
+		accent = Gtk.Box()
+
+		accent.set_size_request(
+			-1,
+			4,
+		)
+
+		accent.get_style_context().add_class(
+			"category-header-accent"
+		)
+
+		frame.pack_start(
+			accent,
+			False,
+			False,
+			2,
+		)
+
+		# Application grid
+		grid = Gtk.Grid()
+
+		grid.set_column_homogeneous(True)
+		grid.set_column_spacing(10)
+		grid.set_row_spacing(10)
+
+		applications = APPS_CONFIG[category_name]
+
+		for index, (app_name, status) in enumerate(applications):
+			detected_status = self.installed_status.get(app_name, status)
+
+			button = self._create_app_button(
+				app_name,
+				detected_status,
+			)
+
+			# Two columns in each category.
+			column = index % 2
+			row = index // 2
+
+			grid.attach(
+				button,
+				column,
+				row,
+				1,
+				1,
+			)
+
+		frame.pack_start(
+			grid,
+			False,
+			False,
+			6,
+		)
+
+		return frame
+
+	# ========================================================
+	# APPLICATION BUTTON
+	# ========================================================
+
+	def _create_app_button(
+		self,
+		app_name,
+		is_installed,
+	):
+
+		button = Gtk.Button()
+
+		button.set_relief(
+			Gtk.ReliefStyle.NONE
+		)
+
+		button.set_hexpand(True)
+		button.set_halign(Gtk.Align.FILL)
+
+		button.get_style_context().add_class(
+			"app-button"
+		)
+
+		content = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=13,
+		)
+
+		content.set_halign(
+			Gtk.Align.FILL
+		)
+
+		# ----------------------------------------------------
+		# Icon well
+		# ----------------------------------------------------
+
+		icon_box = Gtk.Box()
+
+		icon_box.set_size_request(
+			48,
+			48,
+		)
+
+		icon_box.set_halign(
+			Gtk.Align.CENTER
+		)
+
+		icon_box.set_valign(
+			Gtk.Align.CENTER
+		)
+
+		icon_box.get_style_context().add_class(
+			"app-icon-box"
+		)
+
+		icon_name = ICON_NAMES.get(
+			app_name,
+			"application-x-executable-symbolic",
+		)
+
+		icon = Gtk.Image.new_from_icon_name(
+			icon_name,
+			Gtk.IconSize.DIALOG,
+		)
+
+		icon.set_pixel_size(27)
+
+		icon.get_style_context().add_class(
+			"app-icon"
+		)
+
+		icon_box.pack_start(
+			icon,
+			True,
+			True,
+			0,
+		)
+
+		content.pack_start(
+			icon_box,
+			False,
+			False,
+			0,
+		)
+
+		# ----------------------------------------------------
+		# Text
+		# ----------------------------------------------------
+
+		text_box = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=3,
+		)
+
+		text_box.set_valign(
+			Gtk.Align.CENTER
+		)
+
+		name_label = Gtk.Label(
+			label=app_name
+		)
+
+		name_label.set_halign(
+			Gtk.Align.START
+		)
+
+		name_label.set_ellipsize(
+			Pango.EllipsizeMode.END
+		)
+
+		name_label.get_style_context().add_class(
+			"app-name"
+		)
+
+		text_box.pack_start(
+			name_label,
+			False,
+			False,
+			0,
+		)
+
+		status_label = Gtk.Label()
+
+		status_label.set_halign(
+			Gtk.Align.START
+		)
+
+		if is_installed is True:
+
+			if app_name == ("MousePad", "Atril"):
+				# MousePad is installed-only and not removable.
+				status_label.set_text(
+					"✓ Installed"
+				)
+				status_label.get_style_context().add_class(
+					"status-installed"
+				)
+				button.set_sensitive(False)
+			else:
+				# Installed but removable.
+				status_label.set_markup(
+					f'<span foreground="{COLOR_INSTALLED}">'
+					f'✓ Installed</span>'
+					f'  <span foreground="{COLOR_REMOVE}"'
+					f' font_weight="bold">REMOVE?</span>'
+				)
+				status_label.get_style_context().add_class(
+					"status-installed"
+				)
+
+		elif is_installed is None:
+
+			if app_name == "TBD":
+
+				status_label.set_text(
+					"Coming Soon"
+				)
+
+				status_label.get_style_context().add_class(
+					"status-placeholder"
+				)
+
+				button.set_sensitive(False)
+
+			elif app_name in (
+				"Run Updates",
+				"Create New User",
+			):
+
+				status_label.set_text(
+					"➜ Click to run"
+				)
+
+				status_label.get_style_context().add_class(
+					"status-action"
+				)
+
+			else:
+
+				status_label.set_text(
+					"➜ Click to open"
+				)
+
+				status_label.get_style_context().add_class(
+					"status-action"
+				)
+
+		else:
+
+			status_label.set_text(
+				"Click to Install"
+			)
+
+			status_label.get_style_context().add_class(
+				"status-click"
+			)
+
+		text_box.pack_start(
+			status_label,
+			False,
+			False,
+			0,
+		)
+
+		content.pack_start(
+			text_box,
+			True,
+			True,
+			0,
+		)
+
+		button.add(content)
+
+		button.connect(
+			"clicked",
+			self._on_app_clicked,
+			app_name,
+			is_installed,
+		)
+
+		self.app_buttons[app_name] = {
+			"button": button,
+			"status": status_label,
+		}
+
+		return button
+
+	# ========================================================
+	# BUTTON HANDLER
+	# ========================================================
+
+	def _on_app_clicked(
+		self,
+		widget,
+		app_name,
+		is_installed,
+	):
+
+		# Use live status rather than the parameter captured
+		# at button creation time.
+		current_status = self.installed_status.get(
+			app_name,
+			is_installed,
+		)
+
+		if app_name == "TBD":
+			return
+
+		# MousePad & Atril are installed-only and not removable.
+		if app_name == ("MousePad", "Atril"):
+			return
+
+		if app_name == "Run Updates":
+			self._run_updates()
+			return
+
+		if app_name == "Keyboard Layout":
+			self._show_keyboard_layout_dialog()
+			return
+
+		if app_name == "Settings":
+			self._open_settings_manager()
+			return
+
+		if app_name == "ClamAV":
+			self._show_install_confirmation(widget, app_name)
+			return
+
+		if app_name == "WireGuard":
+			self._show_install_confirmation(widget, app_name)
+			return
+
+		if app_name == "Create New User":
+			self._show_new_user_dialog()
+			return
+
+		if app_name in DOCS_URLS:
+			self._open_documentation(
+				DOCS_URLS[app_name]
+			)
+			return
+
+		if current_status is True:
+			self._show_remove_confirmation(
+				widget,
+				app_name,
+			)
+		else:
+			self._show_install_confirmation(
+				widget,
+				app_name,
+			)
+
+	# ========================================================
+	# INSTALL CONFIRMATION
+	# ========================================================
+
+	def _show_install_confirmation(
+		self,
+		widget,
+		app_name,
+	):
+
+		dialog = Gtk.MessageDialog(
+			transient_for=self,
+			modal=True,
+			destroy_with_parent=True,
+			message_type=Gtk.MessageType.QUESTION,
+			buttons=Gtk.ButtonsType.YES_NO,
+			text=f"Install {app_name}?",
+		)
+
+		dialog.format_secondary_text(
+			f"BcalcOS will install {app_name} "
+			f"using the system package manager.\n\n"
+			f"Administrative authentication may be required."
+		)
+
+		response = dialog.run()
+
+		dialog.destroy()
+
+		if response == Gtk.ResponseType.YES:
+
+			self._install_application(
+				widget,
+				app_name,
+			)
+
+	# ========================================================
+	# REMOVE CONFIRMATION
+	# ========================================================
+
+	def _show_remove_confirmation(
+		self,
+		widget,
+		app_name,
+	):
+
+		dialog = Gtk.MessageDialog(
+			transient_for=self,
+			modal=True,
+			destroy_with_parent=True,
+			message_type=Gtk.MessageType.WARNING,
+			buttons=Gtk.ButtonsType.YES_NO,
+			text=f"Remove {app_name}?",
+		)
+
+		dialog.format_secondary_text(
+			f"BcalcOS will uninstall {app_name} "
+			f"and clean up unused dependencies.\n\n"
+			f"Administrative authentication may be required."
+		)
+
+		response = dialog.run()
+
+		dialog.destroy()
+
+		if response == Gtk.ResponseType.YES:
+
+			self._remove_application(
+				widget,
+				app_name,
+			)
+
+	# ========================================================
+	# PRIVILEGED PACKAGE INSTALL
+	# ========================================================
+
+	def _install_application(
+		self,
+		widget,
+		app_name,
+	):
+
+		package = PACKAGE_MAP.get(
+			app_name
+		)
+
+		if not package:
+			self._show_error(
+				f"No package mapping exists for {app_name}."
+			)
+			return
+
+		self._set_button_busy(
+			widget,
+			f"Installing {app_name}..."
+		)
+
+		thread = threading.Thread(
+			target=self._install_worker,
+			args=(
+				widget,
+				app_name,
+				package,
+			),
+			daemon=True,
+		)
+
+		thread.start()
+
+	def _install_worker(
+		self,
+		widget,
+		app_name,
+		package,
+	):
+
+		try:
+
+			update = subprocess.run(
+				[
+					"pkexec",
+					"apt-get",
+					"update",
+				],
+				check=False,
+			)
+
+			if update.returncode != 0:
+				raise RuntimeError(
+					"Package list update was not completed."
+				)
+
+			install = subprocess.run(
+				[
+					"pkexec",
+					"apt-get",
+					"install",
+					"-y",
+					package,
+				],
+				check=False,
+			)
+
+			if install.returncode != 0:
+				raise RuntimeError(
+					f"Installation of {app_name} was not completed."
+				)
+
+			GLib.idle_add(
+				self._installation_success,
+				widget,
+				app_name,
+			)
+
+		except Exception as exc:
+
+			GLib.idle_add(
+				self._installation_failed,
+				widget,
+				str(exc),
+			)
+
+	# ========================================================
+	# PRIVILEGED PACKAGE REMOVAL
+	# ========================================================
+
+	def _remove_application(
+		self,
+		widget,
+		app_name,
+	):
+
+		package = PACKAGE_MAP.get(
+			app_name
+		)
+
+		if not package:
+			self._show_error(
+				f"No package mapping exists for {app_name}."
+			)
+			return
+
+		self._set_button_busy(
+			widget,
+			f"Removing {app_name}..."
+		)
+
+		thread = threading.Thread(
+			target=self._remove_worker,
+			args=(
+				widget,
+				app_name,
+				package,
+			),
+			daemon=True,
+		)
+
+		thread.start()
+
+	def _remove_worker(
+		self,
+		widget,
+		app_name,
+		package,
+	):
+
+		try:
+
+			result = subprocess.run(
+				[
+					"pkexec",
+					"apt-get",
+					"remove",
+					"-y",
+					package,
+				],
+				check=False,
+			)
+
+			if result.returncode != 0:
+				raise RuntimeError(
+					f"Removal of {app_name} was not completed."
+				)
+
+			# Clean up orphaned dependencies.
+			# Failure here is non-fatal.
+			autoremove = subprocess.run(
+				[
+					"pkexec",
+					"apt-get",
+					"autoremove",
+					"-y",
+				],
+				check=False,
+			)
+
+			if autoremove.returncode != 0:
+				print(
+					f"WARNING: autoremove failed after "
+					f"removing {app_name}"
+				)
+
+			GLib.idle_add(
+				self._removal_success,
+				widget,
+				app_name,
+			)
+
+		except Exception as exc:
+
+			GLib.idle_add(
+				self._removal_failed,
+				widget,
+				app_name,
+				str(exc),
+			)
+
+	# ========================================================
+	# INSTALLATION UI
+	# ========================================================
+
+	def _set_button_busy(
+		self,
+		widget,
+		text,
+	):
+
+		content = widget.get_child()
+
+		if not content:
+			return
+
+		text_box = content.get_children()[-1]
+
+		children = text_box.get_children()
+
+		if len(children) >= 2:
+
+			status = children[1]
+
+			status.set_text(text)
+
+			status.get_style_context().remove_class(
+				"status-click"
+			)
+
+			status.get_style_context().remove_class(
+				"status-installed"
+			)
+
+			status.get_style_context().add_class(
+				"status-action"
+			)
+
+		widget.set_sensitive(False)
+
+	def _installation_success(
+		self,
+		widget,
+		app_name,
+	):
+
+		info = self.app_buttons.get(
+			app_name
+		)
+
+		if info:
+
+			status = info["status"]
+
+			status.get_style_context().remove_class(
+				"status-click"
+			)
+
+			status.get_style_context().remove_class(
+				"status-action"
+			)
+
+			status.get_style_context().add_class(
+				"status-installed"
+			)
+
+			if app_name == ("MousePad", "Atril"):
+				status.set_text(
+					"✓ Installed"
+				)
+				info["button"].set_sensitive(
+					False
+				)
+			else:
+				status.set_markup(
+					f'<span foreground="{COLOR_INSTALLED}">'
+					f'✓ Installed</span>'
+					f'  <span foreground="{COLOR_REMOVE}"'
+					f' font_weight="bold">REMOVE?</span>'
+				)
+				info["button"].set_sensitive(
+					True
+				)
+
+		self.installed_status[
+			app_name
+		] = True
+
+		return False
+
+	def _installation_failed(
+		self,
+		widget,
+		message,
+	):
+
+		widget.set_sensitive(True)
+
+		self._show_error(
+			f"Installation failed.\n\n{message}"
+		)
+
+		return False
+
+	# ========================================================
+	# REMOVAL UI
+	# ========================================================
+
+	def _removal_success(
+		self,
+		widget,
+		app_name,
+	):
+
+		info = self.app_buttons.get(
+			app_name
+		)
+
+		if info:
+
+			status = info["status"]
+
+			status.set_text(
+				"Click to Install"
+			)
+
+			status.get_style_context().remove_class(
+				"status-installed"
+			)
+
+			status.get_style_context().remove_class(
+				"status-action"
+			)
+
+			status.get_style_context().add_class(
+				"status-click"
+			)
+
+			info["button"].set_sensitive(
+				True
+			)
+
+		self.installed_status[
+			app_name
+		] = False
+
+		return False
+
+	def _removal_failed(
+		self,
+		widget,
+		app_name,
+		message,
+	):
+
+		info = self.app_buttons.get(
+			app_name
+		)
+
+		if info:
+
+			status = info["status"]
+
+			status.set_markup(
+				f'<span foreground="{COLOR_INSTALLED}">'
+				f'✓ Installed</span>'
+				f'  <span foreground="{COLOR_REMOVE}"'
+				f' font_weight="bold">REMOVE?</span>'
+			)
+
+			status.get_style_context().remove_class(
+				"status-action"
+			)
+
+			status.get_style_context().add_class(
+				"status-installed"
+			)
+
+			info["button"].set_sensitive(
+				True
+			)
+
+		self._show_error(
+			f"Removal failed.\n\n{message}"
+		)
+
+		return False
+
+	# ========================================================
+	# SYSTEM UPDATES
+	# ========================================================
+
+	def _run_updates(self):
+
+		dialog = Gtk.MessageDialog(
+			transient_for=self,
+			modal=True,
+			destroy_with_parent=True,
+			message_type=Gtk.MessageType.QUESTION,
+			buttons=Gtk.ButtonsType.YES_NO,
+			text="Run system updates?",
+		)
+
+		dialog.format_secondary_text(
+			"BcalcOS will update the package lists and "
+			"upgrade installed packages.\n\n"
+			"Administrative authentication may be required."
+		)
+
+		response = dialog.run()
+
+		dialog.destroy()
+
+		if response != Gtk.ResponseType.YES:
+			return
+
+		self._show_update_progress()
+
+	def _show_update_progress(self):
+
+		dialog = Gtk.Dialog(
+			title="Updating BcalcOS",
+			transient_for=self,
+			flags=Gtk.DialogFlags.MODAL,
+		)
+
+		dialog.set_default_size(
+			480,
+			180,
+		)
+
+		box = dialog.get_content_area()
+
+		box.set_margin_start(25)
+		box.set_margin_end(25)
+		box.set_margin_top(25)
+		box.set_margin_bottom(25)
+
+		label = Gtk.Label(
+			label="Updating your system..."
+		)
+
+		label.get_style_context().add_class(
+			"dialog-title"
+		)
+
+		box.pack_start(
+			label,
+			False,
+			False,
+			10,
+		)
+
+		progress = Gtk.ProgressBar()
+
+		progress.pulse()
+
+		box.pack_start(
+			progress,
+			False,
+			False,
+			10,
+		)
+
+		dialog.show_all()
+
+		def pulse():
+
+			if not dialog.get_visible():
+				return False
+
+			progress.pulse()
+
+			return True
+
+		pulse_id = GLib.timeout_add(
+			100,
+			pulse,
+		)
+
+		thread = threading.Thread(
+			target=self._update_worker,
+			args=(dialog, pulse_id),
+			daemon=True,
+		)
+
+		thread.start()
+
+	def _update_worker(
+		self,
+		dialog,
+		pulse_id,
+	):
+
+		try:
+
+			result = subprocess.run(
+				[
+					"pkexec",
+					"apt-get",
+					"update",
+				],
+				check=False,
+			)
+
+			if result.returncode != 0:
+				raise RuntimeError(
+					"apt-get update failed."
+				)
+
+			result = subprocess.run(
+				[
+					"pkexec",
+					"apt-get",
+					"upgrade",
+					"-y",
+				],
+				check=False,
+			)
+
+			if result.returncode != 0:
+				raise RuntimeError(
+					"apt-get upgrade failed."
+				)
+
+			GLib.idle_add(
+				self._update_finished,
+				dialog,
+				pulse_id,
+				None,
+			)
+
+		except Exception as exc:
+
+			GLib.idle_add(
+				self._update_finished,
+				dialog,
+				pulse_id,
+				str(exc),
+			)
+
+	def _update_finished(
+		self,
+		dialog,
+		pulse_id,
+		error,
+	):
+
+		try:
+			GLib.source_remove(
+				pulse_id
+			)
+		except Exception:
+			pass
+
+		dialog.destroy()
+
+		if error:
+			self._show_error(
+				f"System update failed.\n\n{error}"
+			)
+		else:
+			self._show_information(
+				"System update complete."
+			)
+
+		return False
+
+	# ========================================================
+	# USER CREATION
+	# ========================================================
+
+	def _show_new_user_dialog(self):
+
+		dialog = Gtk.Dialog(
+			title="Create New User",
+			transient_for=self,
+			flags=Gtk.DialogFlags.MODAL,
+		)
+
+		dialog.add_button(
+			"Cancel",
+			Gtk.ResponseType.CANCEL,
+		)
+
+		dialog.add_button(
+			"Create User",
+			Gtk.ResponseType.OK,
+		)
+
+		dialog.set_default_response(
+			Gtk.ResponseType.OK
+		)
+
+		dialog.set_default_size(
+			520,
+			350,
+		)
+
+		box = dialog.get_content_area()
+
+		box.set_spacing(14)
+		box.set_margin_start(28)
+		box.set_margin_end(28)
+		box.set_margin_top(25)
+		box.set_margin_bottom(25)
+
+		title = Gtk.Label(
+			label="Create a new BcalcOS user"
+		)
+
+		title.set_halign(
+			Gtk.Align.START
+		)
+
+		title.get_style_context().add_class(
+			"dialog-title"
+		)
+
+		box.pack_start(
+			title,
+			False,
+			False,
+			4,
+		)
+
+		username = self._create_entry_row(
+			box,
+			"Username:",
+			"lowercase, no spaces",
+		)
+
+		fullname = self._create_entry_row(
+			box,
+			"Full Name:",
+			"Optional",
+		)
+
+		password = self._create_entry_row(
+			box,
+			"Password:",
+			"Enter password",
+		)
+
+		password.set_visibility(False)
+
+		confirm = self._create_entry_row(
+			box,
+			"Confirm:",
+			"Enter password again",
+		)
+
+		confirm.set_visibility(False)
+
+		dialog.show_all()
+
+		response = dialog.run()
+
+		if response == Gtk.ResponseType.OK:
+
+			username_text = (
+				username.get_text().strip()
+			)
+
+			fullname_text = (
+				fullname.get_text().strip()
+			)
+
+			password_text = (
+				password.get_text()
+			)
+
+			confirm_text = (
+				confirm.get_text()
+			)
+
+			if not username_text:
+				self._show_error(
+					"Username is required."
+				)
+				return
+
+			elif not password_text:
+				self._show_error(
+					"Password is required."
+				)
+				return
+
+			elif password_text != confirm_text:
+				self._show_error(
+					"Passwords do not match."
+				)
+				return
+
+			elif not self._valid_username(
+				username_text
+			):
+				self._show_error(
+					"Username must contain only "
+					"lowercase letters, numbers, "
+					"underscores, or hyphens."
+				)
+				return
+
+			else:
+
+				dialog.destroy()
+
+				self._create_user(
+					username_text,
+					fullname_text,
+					password_text,
+				)
+
+				return
+
+		dialog.destroy()
+
+	# ========================================================
+	# KEYBOARD LAYOUT SELECTION
+	# ========================================================
+
+	def _show_keyboard_layout_dialog(self):
+
+		dialog = Gtk.Dialog(
+			title="Keyboard Layout",
+			transient_for=self,
+			modal=True,
+		)
+
+		dialog.add_button(
+			"Cancel",
+			Gtk.ResponseType.CANCEL,
+		)
+
+		dialog.add_button(
+			"Apply",
+			Gtk.ResponseType.OK,
+		)
+
+		dialog.set_default_response(
+			Gtk.ResponseType.OK
+		)
+
+		dialog.set_default_size(
+			520,
+			350,
+		)
+
+		box = dialog.get_content_area()
+
+		box.set_spacing(14)
+		box.set_margin_start(28)
+		box.set_margin_end(28)
+		box.set_margin_top(25)
+		box.set_margin_bottom(25)
+
+		title = Gtk.Label(
+			label="Select keyboard layout"
+		)
+
+		title.set_halign(
+			Gtk.Align.START
+		)
+
+		title.get_style_context().add_class(
+			"dialog-title"
+		)
+
+		box.pack_start(
+			title,
+			False,
+			False,
+			4,
+		)
+
+		description = Gtk.Label(
+			label="Changes will take effect at next login."
+		)
+
+		description.set_halign(
+			Gtk.Align.START
+		)
+
+		description.set_line_wrap(True)
+
+		box.pack_start(
+			description,
+			False,
+			False,
+			6,
+		)
+
+		# Row with label and combo box
+		row = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=15,
+		)
+
+		label = Gtk.Label(
+			label="Layout:"
+		)
+
+		label.set_halign(
+			Gtk.Align.START
+		)
+
+		label.set_size_request(
+			105,
+			-1,
+		)
+
+		label.get_style_context().add_class(
+			"dialog-label"
+		)
+
+		row.pack_start(
+			label,
+			False,
+			False,
+			0,
+		)
+
+		# Combo box for layout selection
+		combo = Gtk.ComboBoxText()
+
+		combo.set_hexpand(True)
+
+		# Add all curated layouts
+		for display_name in KEYBOARD_LAYOUTS.keys():
+			combo.append_text(display_name)
+
+		# Add safety valve option
+		combo.append_text("Other (manual setup)")
+
+		box.pack_start(
+			row,
+			False,
+			False,
+			0,
+		)
+
+		row.pack_start(
+			combo,
+			True,
+			True,
+			0,
+		)
+
+		# Detect current layout and pre-select
+		current = self._get_current_keyboard_layout()
+
+		if current:
+			found = False
+			for i, (display, code) in enumerate(KEYBOARD_LAYOUTS.items()):
+				if code == current:
+					combo.set_active(i)
+					found = True
+					break
+			if not found:
+				combo.set_active(len(KEYBOARD_LAYOUTS))
+		else:
+			combo.set_active(0)
+
+		dialog.show_all()
+
+		response = dialog.run()
+
+		if response == Gtk.ResponseType.OK:
+
+			selected_text = combo.get_active_text()
+
+			if selected_text == "Other (manual setup)":
+
+				# Launch system tool for manual configuration
+				dialog.destroy()
+
+				try:
+					subprocess.Popen(
+						["pkexec", "dpkg-reconfigure", "keyboard-configuration"],
+					)
+				except Exception as exc:
+					self._show_error(
+						f"Could not launch keyboard configuration.\n\n{exc}"
+					)
+
+			else:
+
+				layout_code = KEYBOARD_LAYOUTS.get(selected_text)
+
+				if layout_code:
+
+					dialog.destroy()
+
+					self._apply_keyboard_layout(
+						layout_code,
+						selected_text,
+					)
+
+				else:
+
+					dialog.destroy()
+
+					self._show_error(
+						"Invalid keyboard layout selection."
+					)
+
+		dialog.destroy()
+
+	def _get_current_keyboard_layout(self):
+
+		"""Read current XKBLAYOUT from /etc/default/keyboard."""
+
+		try:
+			with open(
+				"/etc/default/keyboard",
+				"r",
+			) as f:
+				content = f.read()
+
+			for line in content.split("\n"):
+				if line.startswith("XKBLAYOUT="):
+					value = line.split("=", 1)[1]
+					value = value.strip('"\'')
+					return value
+
+		except Exception:
+			pass
+
+		return None
+
+	def _apply_keyboard_layout(
+		self,
+		layout_code,
+		layout_display_name,
+	):
+
+		"""Write new keyboard layout to /etc/default/keyboard via pkexec."""
+
+		dialog = Gtk.MessageDialog(
+			transient_for=self,
+			modal=True,
+			destroy_with_parent=True,
+			message_type=Gtk.MessageType.QUESTION,
+			buttons=Gtk.ButtonsType.YES_NO,
+			text=f"Apply {layout_display_name} keyboard layout?",
+		)
+
+		dialog.format_secondary_text(
+			"This will update the keyboard layout "
+			"for the entire system.\n\n"
+			"Changes will take effect at next login."
+		)
+
+		response = dialog.run()
+
+		dialog.destroy()
+
+		if response != Gtk.ResponseType.YES:
+			return
+
+		thread = threading.Thread(
+			target=self._apply_keyboard_worker,
+			args=(layout_code, layout_display_name),
+			daemon=True,
+		)
+
+		thread.start()
+
+	def _apply_keyboard_worker(
+		self,
+		layout_code,
+		layout_display_name,
+	):
+
+		try:
+
+			# Read existing file to preserve other settings
+			existing_content = ""
+
+			try:
+				with open("/etc/default/keyboard", "r") as f:
+					existing_content = f.read()
+			except Exception:
+				pass
+
+			# Parse existing settings
+			xkb_model = "pc105"
+			xkb_variant = ""
+			xkb_options = ""
+
+			for line in existing_content.split("\n"):
+				if line.startswith("XKBMODEL="):
+					xkb_model = line.split("=", 1)[1].strip('"\'')
+				elif line.startswith("XKBVARIANT="):
+					xkb_variant = line.split("=", 1)[1].strip('"\'')
+				elif line.startswith("XKBOPTIONS="):
+					xkb_options = line.split("=", 1)[1].strip('"\'')
+
+			# Build new content
+			new_content = f"""\
+# Keyboard layout configuration
+# Generated by BcalcOS Welcome Center
+
+XKBMODEL="{xkb_model}"
+XKBLAYOUT="{layout_code}"
+XKBVARIANT="{xkb_variant}"
+XKBOPTIONS="{xkb_options}"
+BACKSPACE="guess"
+"""
+
+			# Write via pkexec
+			result = subprocess.run(
+				[
+					"pkexec",
+					"/bin/sh",
+					"-c",
+					f"cat > /etc/default/keyboard",
+				],
+				input=new_content.encode("utf-8"),
+				capture_output=True,
+				check=False,
+			)
+
+			if result.returncode != 0:
+				err_msg = result.stderr.decode("utf-8", errors="replace").strip()
+				if not err_msg:
+					err_msg = "Permission denied or write failed."
+				raise RuntimeError(err_msg)
+
+			GLib.idle_add(
+				self._keyboard_layout_finished,
+				layout_display_name,
+				None,
+			)
+
+		except Exception as exc:
+
+			GLib.idle_add(
+				self._keyboard_layout_finished,
+				layout_display_name,
+				str(exc),
+			)
+
+	def _keyboard_layout_finished(
+		self,
+		layout_display_name,
+		error,
+	):
+
+		if error:
+
+			self._show_error(
+				f"Failed to apply keyboard layout.\n\n{error}"
+			)
+
+		else:
+
+			self._show_information(
+				f"Keyboard layout set to {layout_display_name}. "
+				f"Changes will take effect at next login."
+			)
+
+		return False
+
+
+	# ========================================================
+	# BUILTIN SETTING MANAGER
+	# ========================================================
+
+	def _open_settings_manager(self):
+
+		try:
+			subprocess.Popen(
+				["xfce4-settings-manager"]
+			)
+		except Exception as exc:
+			self._show_error(
+				f"Could not open Settings Manager.\n\n{exc}"
+			)
+
+###########################
+	def _create_entry_row(
+		self,
+		parent,
+		label_text,
+		placeholder,
+	):
+
+		row = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=15,
+		)
+
+		label = Gtk.Label(
+			label=label_text
+		)
+
+		label.set_halign(
+			Gtk.Align.START
+		)
+
+		label.set_size_request(
+			105,
+			-1,
+		)
+
+		label.get_style_context().add_class(
+			"dialog-label"
+		)
+
+		entry = Gtk.Entry()
+
+		entry.set_hexpand(True)
+
+		entry.set_placeholder_text(
+			placeholder
+		)
+
+		entry.get_style_context().add_class(
+			"dialog-entry"
+		)
+
+		row.pack_start(
+			label,
+			False,
+			False,
+			0,
+		)
+
+		row.pack_start(
+			entry,
+			True,
+			True,
+			0,
+		)
+
+		parent.pack_start(
+			row,
+			False,
+			False,
+			0,
+		)
+
+		return entry
+
+	@staticmethod
+	def _valid_username(username):
+
+		if not username:
+			return False
+
+		allowed = (
+			"abcdefghijklmnopqrstuvwxyz"
+			"0123456789_-"
+		)
+
+		return all(
+			character in allowed
+			for character in username
+		)
+
+	# ========================================================
+	# USER CREATION - SECURE PRIVILEGED FLOW
+	# ========================================================
+
+	def _create_user(
+		self,
+		username,
+		fullname,
+		password,
+	):
+
+		def worker():
+
+			try:
+
+				# Step 1: Create the user account
+				useradd_cmd = ["/usr/sbin/useradd", "-m", "-s", "/bin/bash"]
+				if fullname:
+					useradd_cmd.extend(["-c", fullname])
+				useradd_cmd.append(username)
+
+				result = subprocess.run(
+					["pkexec"] + useradd_cmd,
+					check=False,
+					capture_output=True,
+				)
+
+				if result.returncode != 0:
+					err_msg = result.stderr.decode("utf-8", errors="replace").strip()
+					if not err_msg:
+						err_msg = result.stdout.decode("utf-8", errors="replace").strip()
+					raise RuntimeError(
+						f"The user account could not be created: {err_msg}"
+					)
+
+				# Step 2: Set the password
+				password_line = (
+					f"{username}:{password}\n"
+				).encode("utf-8")
+
+				result = subprocess.run(
+					["pkexec", "/usr/sbin/chpasswd"],
+					input=password_line,
+					check=True,
+					capture_output=True,
+				)
+
+				if result.returncode != 0:
+					err_msg = result.stderr.decode("utf-8", errors="replace").strip()
+					if not err_msg:
+						err_msg = result.stdout.decode("utf-8", errors="replace").strip()
+					raise RuntimeError(
+						"The user account was created, "
+						f"but setting the password failed: {err_msg}"
+					)
+
+				GLib.idle_add(
+					self._user_creation_finished,
+					None,
+				)
+
+			except Exception as exc:
+
+				GLib.idle_add(
+					self._user_creation_finished,
+					str(exc),
+				)
+
+		thread = threading.Thread(
+			target=worker,
+			daemon=True,
+		)
+
+		thread.start()
+
+	def _user_creation_finished(
+		self,
+		error,
+	):
+
+		if error:
+
+			self._show_error(
+				f"User creation failed.\n\n{error}"
+			)
+
+		else:
+
+			self._show_information(
+				"The new user account was created successfully."
+			)
+
+		return False
+
+	# ========================================================
+	# DOCUMENTATION
+	# ========================================================
+
+	def _open_documentation(
+		self,
+		path,
+	):
+
+		if not path:
+			return
+
+		try:
+
+			subprocess.Popen(
+				[
+					"xdg-open",
+					path,
+				]
+			)
+
+		except Exception as exc:
+
+			self._show_error(
+				f"Could not open documentation.\n\n{exc}"
+			)
+
+	# ========================================================
+	# INFORMATION / ERROR DIALOGS
+	# ========================================================
+
+	def _show_information(
+		self,
+		message,
+	):
+
+		dialog = Gtk.MessageDialog(
+			transient_for=self,
+			modal=True,
+			destroy_with_parent=True,
+			message_type=Gtk.MessageType.INFO,
+			buttons=Gtk.ButtonsType.OK,
+			text=message,
+		)
+
+		dialog.run()
+		dialog.destroy()
+
+	def _show_error(
+		self,
+		message,
+	):
+
+		dialog = Gtk.MessageDialog(
+			transient_for=self,
+			modal=True,
+			destroy_with_parent=True,
+			message_type=Gtk.MessageType.ERROR,
+			buttons=Gtk.ButtonsType.OK,
+			text=message,
+		)
+
+		dialog.run()
+		dialog.destroy()
+
+	# ========================================================
+	# WINDOW DISPLAY
+	# ========================================================
+
+	def show_main_window(self):
+
+		self.show_all()
+
+		self.present()
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+
+	# Keep GTK's environment predictable.
+	os.environ.setdefault(
+		"GTK_THEME",
+		"Adwaita",
+	)
+
+	install_css()
+
+	app = WelcomeApp()
+
+	splash = SplashScreen(
+		app
+	)
+
+	splash.show_all()
+
+	Gtk.main()
+
+
+if __name__ == "__main__":
+
+	signal.signal(
+		signal.SIGINT,
+		signal.SIG_DFL,
+	)
+
+	main()

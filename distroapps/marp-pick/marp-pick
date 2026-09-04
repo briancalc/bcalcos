@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+#Marp-pick.py
+#v1.0
+
+import gi
+import os
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+import subprocess
+
+os.environ['GTK_THEME'] = 'Adwaita'
+
+dialog = Gtk.FileChooserDialog(title="Choose a Marp file", action=Gtk.FileChooserAction.OPEN)
+dialog.add_buttons(
+    Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+    Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+)
+
+flt = Gtk.FileFilter()
+flt.set_name("Markdown files")
+flt.add_pattern("*.md")
+flt.add_pattern("*.markdown")
+dialog.add_filter(flt)
+
+resp = dialog.run()
+if resp == Gtk.ResponseType.OK:
+    path = dialog.get_filename()
+    subprocess.run([
+        "marp",
+        "-c", "/etc/marp-gui/.marprc.json",
+        "--theme-set", "/usr/share/marp-gui/theme.css",
+        "--pdf",
+        "--browser-path", "/usr/bin/brave-origin",
+        path
+    ])
+    #input("Press to close")
+
+dialog.destroy()

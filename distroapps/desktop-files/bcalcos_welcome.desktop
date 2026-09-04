@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BcalcOS Welcome
+Exec=/usr/bin/bcalcos_welcome
+Icon=/usr/share/bcalcosbrand/standing.icon
+Terminal=false
+Categories=Utility

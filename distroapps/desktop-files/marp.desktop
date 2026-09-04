@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Marp
+Comment=Markdown presentation tool
+Exec=/usr/bin/marp-pick
+Terminal=true
+Categories=Office;
+StartupNotify=false
+Icon=document

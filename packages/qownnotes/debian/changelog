@@ -1,0 +1,7 @@
+qownnotes (26.8.11-1) bobwhite; urgency=medium
+
+  * Initial BcalcOS QOwnNotes package.
+  * Package QOwnNotes 26.8.11 for BcalcOS.
+  * Build against the Devuan Qt 6 stack.
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Sat, 29 Aug 2026 00:00:00 +0000

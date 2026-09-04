@@ -1,0 +1,8 @@
+#!/bin/sh
+#weekly-fstrim
+#v1.0
+#
+#weekly fstrim run for disk maintenance
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+/usr/sbin/fstrim -av

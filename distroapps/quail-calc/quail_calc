@@ -1,0 +1,1033 @@
+#!/usr/bin/env python3
+#qual_calc.py
+#v1.0
+
+
+import tkinter as tk
+import tkinter.font as tkfont
+from decimal import Decimal, getcontext, InvalidOperation
+
+
+# ============================================================
+# QUAIL CALC
+# ============================================================
+#
+# Easy sizing changes are at the top of this file.
+#
+# ============================================================
+
+
+# ------------------------------------------------------------
+# WINDOW SIZE
+# ------------------------------------------------------------
+
+WINDOW_WIDTH = 460
+WINDOW_HEIGHT = 560
+
+MIN_WIDTH = 360
+MIN_HEIGHT = 480
+
+
+# ------------------------------------------------------------
+# DISPLAY
+# ------------------------------------------------------------
+
+DISPLAY_FONT_SIZE = 30
+DISPLAY_MIN_FONT_SIZE = 10
+
+DISPLAY_HORIZONTAL_PADDING = 18
+DISPLAY_VERTICAL_PADDING = 18
+
+
+# ------------------------------------------------------------
+# BUTTONS
+# ------------------------------------------------------------
+
+BUTTON_FONT_SIZE = 17
+BUTTON_PAD_X = 4
+BUTTON_PAD_Y = 4
+
+
+# ------------------------------------------------------------
+# TITLE
+# ------------------------------------------------------------
+
+TITLE_FONT_SIZE = 17
+
+
+# ============================================================
+# QUAIL COLORS
+# ============================================================
+
+COLOR_PRIMARY = "#BA7800"
+COLOR_PRIMARY_DARK = "#8A5A00"
+COLOR_PRIMARY_LIGHT = "#D99A28"
+COLOR_PRIMARY_LIGHT_LIGHT = "#EBC978"
+
+COLOR_BG = "#F5F6F8"
+COLOR_SURFACE = "#FFFFFF"
+COLOR_SURFACE_ALT = "#FBF9F5"
+
+COLOR_TEXT = "#2C3E50"
+COLOR_TEXT_MUTED = "#68717A"
+COLOR_TEXT_LIGHT = "#9299A0"
+
+COLOR_BORDER = "#E2E5E8"
+COLOR_BORDER_GOLD = "#E5C88F"
+
+COLOR_WHITE = "#FFFFFF"
+
+
+# ============================================================
+# FONTS
+# ============================================================
+
+FONT_PRIMARY = "Inter"
+FONT_HEADING = "Poppins"
+FONT_MONO = "monospace"
+
+
+# ============================================================
+# PRECISION
+# ============================================================
+
+# Plenty of internal precision.
+# Displayed CALCULATION RESULTS are limited to 12
+# significant digits.
+getcontext().prec = 50
+
+
+# ============================================================
+# CALCULATOR
+# ============================================================
+
+class QuailCalculator:
+
+    def __init__(self, root):
+
+        self.root = root
+
+        self.display_value = "0"
+
+        self.first_number = None
+
+        self.operation = None
+
+        self.start_new_number = True
+
+        self.setup_window()
+        self.create_display()
+        self.create_buttons()
+        self.bind_keyboard()
+
+        self.root.after(
+            50,
+            self.update_display
+        )
+
+    # ========================================================
+    # WINDOW
+    # ========================================================
+
+    def setup_window(self):
+
+        # Blank native title bar.
+        # "Quail Calculator" appears inside the application.
+        self.root.title(" ")
+
+        self.root.geometry(
+            f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}"
+        )
+
+        self.root.minsize(
+            MIN_WIDTH,
+            MIN_HEIGHT
+        )
+
+        self.root.configure(
+            bg=COLOR_BG
+        )
+
+        self.root.columnconfigure(
+            0,
+            weight=1
+        )
+
+        self.root.rowconfigure(
+            1,
+            weight=1
+        )
+
+        self.root.bind(
+            "<Configure>",
+            self.window_resized
+        )
+
+    # ========================================================
+    # DISPLAY
+    # ========================================================
+
+    def create_display(self):
+
+        frame = tk.Frame(
+            self.root,
+            bg=COLOR_SURFACE,
+            padx=DISPLAY_HORIZONTAL_PADDING,
+            pady=DISPLAY_VERTICAL_PADDING
+        )
+
+        frame.grid(
+            row=0,
+            column=0,
+            sticky="ew"
+        )
+
+        frame.columnconfigure(
+            0,
+            weight=1
+        )
+
+        # ----------------------------------------------------
+        # Title
+        # ----------------------------------------------------
+
+        title = tk.Label(
+            frame,
+            text="Quail Calc",
+            bg=COLOR_SURFACE,
+            fg=COLOR_PRIMARY_DARK,
+            font=(
+                FONT_HEADING,
+                TITLE_FONT_SIZE,
+                "bold"
+            ),
+            anchor="w"
+        )
+
+        title.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            pady=(0, 10)
+        )
+
+        # ----------------------------------------------------
+        # Separator
+        # ----------------------------------------------------
+
+        separator = tk.Frame(
+            frame,
+            bg=COLOR_BORDER_GOLD,
+            height=2
+        )
+
+        separator.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+            pady=(0, 12)
+        )
+
+        # ----------------------------------------------------
+        # Display
+        # ----------------------------------------------------
+
+        self.display = tk.Label(
+
+            frame,
+
+            text="0",
+
+            bg=COLOR_SURFACE_ALT,
+
+            fg=COLOR_TEXT,
+
+            anchor="e",
+
+            justify="right",
+
+            font=(
+                FONT_MONO,
+                DISPLAY_FONT_SIZE
+            ),
+
+            padx=12,
+            pady=14,
+
+            bd=0,
+
+            relief="flat"
+        )
+
+        self.display.grid(
+            row=2,
+            column=0,
+            sticky="ew"
+        )
+
+    # ========================================================
+    # BUTTONS
+    # ========================================================
+
+    def create_buttons(self):
+
+        frame = tk.Frame(
+            self.root,
+            bg=COLOR_BG,
+            padx=10,
+            pady=8
+        )
+
+        frame.grid(
+            row=1,
+            column=0,
+            sticky="nsew"
+        )
+
+        for col in range(4):
+
+            frame.columnconfigure(
+                col,
+                weight=1
+            )
+
+        for row in range(5):
+
+            frame.rowconfigure(
+                row,
+                weight=1
+            )
+
+        buttons = [
+
+            ("C", 0, 0, "clear"),
+            ("⌫", 0, 1, "back"),
+            ("÷", 0, 2, "operation"),
+            ("×", 0, 3, "operation"),
+
+            ("7", 1, 0, "number"),
+            ("8", 1, 1, "number"),
+            ("9", 1, 2, "number"),
+            ("−", 1, 3, "operation"),
+
+            ("4", 2, 0, "number"),
+            ("5", 2, 1, "number"),
+            ("6", 2, 2, "number"),
+            ("+", 2, 3, "operation"),
+
+            ("1", 3, 0, "number"),
+            ("2", 3, 1, "number"),
+            ("3", 3, 2, "number"),
+            ("=", 3, 3, "equals"),
+
+            ("0", 4, 0, "number"),
+            (".", 4, 1, "decimal"),
+        ]
+
+        for text, row, col, kind in buttons:
+
+            button = self.make_button(
+                frame,
+                text,
+                kind
+            )
+
+            button.grid(
+                row=row,
+                column=col,
+                sticky="nsew",
+                padx=BUTTON_PAD_X,
+                pady=BUTTON_PAD_Y
+            )
+
+    # ========================================================
+    # BUTTON CREATION
+    # ========================================================
+
+    def make_button(
+        self,
+        parent,
+        text,
+        kind
+    ):
+
+        bg = COLOR_SURFACE
+        fg = COLOR_TEXT
+        hover = COLOR_SURFACE_ALT
+        border = COLOR_BORDER
+
+        if kind == "operation":
+
+            bg = COLOR_PRIMARY_LIGHT_LIGHT
+            fg = COLOR_PRIMARY_DARK
+            hover = COLOR_PRIMARY_LIGHT
+            border = COLOR_BORDER_GOLD
+
+        elif kind == "clear":
+
+            bg = COLOR_SURFACE_ALT
+            fg = COLOR_PRIMARY_DARK
+            hover = COLOR_PRIMARY_LIGHT_LIGHT
+            border = COLOR_BORDER_GOLD
+
+        elif kind == "back":
+
+            bg = COLOR_SURFACE_ALT
+            fg = COLOR_TEXT_MUTED
+            hover = COLOR_PRIMARY_LIGHT_LIGHT
+
+        elif kind == "equals":
+
+            bg = COLOR_PRIMARY
+            fg = COLOR_WHITE
+            hover = COLOR_PRIMARY_DARK
+            border = COLOR_PRIMARY_DARK
+
+        button = tk.Button(
+
+            parent,
+
+            text=text,
+
+            command=lambda value=text:
+                self.button_pressed(value),
+
+            font=(
+                FONT_PRIMARY,
+                BUTTON_FONT_SIZE,
+                "bold"
+            ),
+
+            bg=bg,
+            fg=fg,
+
+            activebackground=hover,
+            activeforeground=fg,
+
+            relief="flat",
+
+            bd=0,
+
+            highlightthickness=1,
+
+            highlightbackground=border,
+
+            highlightcolor=border,
+
+            cursor="hand2"
+        )
+
+        button.normal_bg = bg
+        button.hover_bg = hover
+
+        button.bind(
+            "<Enter>",
+            self.button_enter
+        )
+
+        button.bind(
+            "<Leave>",
+            self.button_leave
+        )
+
+        return button
+
+    # ========================================================
+    # BUTTON HOVER
+    # ========================================================
+
+    def button_enter(self, event):
+
+        event.widget.configure(
+            bg=event.widget.hover_bg
+        )
+
+    def button_leave(self, event):
+
+        event.widget.configure(
+            bg=event.widget.normal_bg
+        )
+
+    # ========================================================
+    # KEYBOARD
+    # ========================================================
+
+    def bind_keyboard(self):
+
+        self.root.bind(
+            "<Key>",
+            self.keyboard_pressed
+        )
+
+    def keyboard_pressed(self, event):
+
+        char = event.char
+        key = event.keysym
+
+        if char in "0123456789":
+
+            self.enter_number(char)
+
+            return "break"
+
+        if char == ".":
+
+            self.enter_decimal()
+
+            return "break"
+
+        if char == "+":
+
+            self.choose_operation("+")
+            return "break"
+
+        if char == "-":
+
+            self.choose_operation("−")
+            return "break"
+
+        if char == "*":
+
+            self.choose_operation("×")
+            return "break"
+
+        if char == "/":
+
+            self.choose_operation("÷")
+            return "break"
+
+        if char == "=":
+
+            self.calculate()
+            return "break"
+
+        if key in ("Return", "KP_Enter"):
+
+            self.calculate()
+            return "break"
+
+        if key == "BackSpace":
+
+            self.backspace()
+            return "break"
+
+        if key == "Escape":
+
+            self.clear()
+            return "break"
+
+    # ========================================================
+    # BUTTON HANDLER
+    # ========================================================
+
+    def button_pressed(self, value):
+
+        if value.isdigit():
+
+            self.enter_number(value)
+
+        elif value == ".":
+
+            self.enter_decimal()
+
+        elif value == "C":
+
+            self.clear()
+
+        elif value == "⌫":
+
+            self.backspace()
+
+        elif value in ("+", "−", "×", "÷"):
+
+            self.choose_operation(value)
+
+        elif value == "=":
+
+            self.calculate()
+
+    # ========================================================
+    # ENTER NUMBER
+    # ========================================================
+
+    def enter_number(self, digit):
+
+        if self.display_value == "Error":
+
+            self.clear()
+
+        # ----------------------------------------------------
+        # NEW NUMBER
+        # ----------------------------------------------------
+
+        if self.start_new_number:
+
+            self.display_value = digit
+
+            self.start_new_number = False
+
+        # ----------------------------------------------------
+        # EXISTING NUMBER
+        # ----------------------------------------------------
+
+        else:
+
+            raw = self.display_value.replace(
+                ",",
+                ""
+            )
+
+            # ------------------------------------------------
+            # NO INPUT LENGTH LIMIT.
+            #
+            # This is intentional.
+            #
+            # The user can enter:
+            #
+            # 9999
+            # 99999
+            # 999999999999999999
+            # etc.
+            #
+            # The display automatically reduces its font
+            # size when necessary.
+            # ------------------------------------------------
+
+            if raw == "0":
+
+                self.display_value = digit
+
+            else:
+
+                self.display_value = raw + digit
+
+        self.display_value = self.add_commas(
+            self.display_value
+        )
+
+        self.update_display()
+
+    # ========================================================
+    # ENTER DECIMAL
+    # ========================================================
+
+    def enter_decimal(self):
+
+        if self.display_value == "Error":
+
+            self.clear()
+
+        if self.start_new_number:
+
+            self.display_value = "0."
+
+            self.start_new_number = False
+
+        else:
+
+            raw = self.display_value.replace(
+                ",",
+                ""
+            )
+
+            if "." not in raw:
+
+                self.display_value = raw + "."
+
+        self.display_value = self.add_commas(
+            self.display_value
+        )
+
+        self.update_display()
+
+    # ========================================================
+    # OPERATION
+    # ========================================================
+
+    def choose_operation(self, operation):
+
+        try:
+
+            current = self.to_decimal(
+                self.display_value
+            )
+
+        except InvalidOperation:
+
+            return
+
+        if (
+            self.first_number is not None
+            and self.operation is not None
+            and not self.start_new_number
+        ):
+
+            try:
+
+                self.perform_calculation(
+                    current
+                )
+
+            except ZeroDivisionError:
+
+                self.display_value = "Error"
+
+                self.first_number = None
+                self.operation = None
+                self.start_new_number = True
+
+                self.update_display()
+
+                return
+
+        else:
+
+            self.first_number = current
+
+        self.operation = operation
+
+        self.start_new_number = True
+
+    # ========================================================
+    # CALCULATE
+    # ========================================================
+
+    def calculate(self):
+
+        if (
+            self.first_number is None
+            or self.operation is None
+        ):
+
+            return
+
+        try:
+
+            second = self.to_decimal(
+                self.display_value
+            )
+
+            self.perform_calculation(
+                second
+            )
+
+            self.first_number = None
+            self.operation = None
+            self.start_new_number = True
+
+        except (
+            InvalidOperation,
+            ZeroDivisionError
+        ):
+
+            self.display_value = "Error"
+
+            self.first_number = None
+            self.operation = None
+            self.start_new_number = True
+
+        self.update_display()
+
+    # ========================================================
+    # PERFORM CALCULATION
+    # ========================================================
+
+    def perform_calculation(self, second):
+
+        if self.first_number is None:
+
+            return
+
+        if self.operation == "+":
+
+            result = (
+                self.first_number
+                + second
+            )
+
+        elif self.operation == "−":
+
+            result = (
+                self.first_number
+                - second
+            )
+
+        elif self.operation == "×":
+
+            result = (
+                self.first_number
+                * second
+            )
+
+        elif self.operation == "÷":
+
+            if second == 0:
+
+                raise ZeroDivisionError
+
+            result = (
+                self.first_number
+                / second
+            )
+
+        else:
+
+            return
+
+        self.display_value = self.format_result(
+            result
+        )
+
+        self.update_display()
+
+    # ========================================================
+    # CLEAR
+    # ========================================================
+
+    def clear(self):
+
+        self.display_value = "0"
+
+        self.first_number = None
+
+        self.operation = None
+
+        self.start_new_number = True
+
+        self.update_display()
+
+    # ========================================================
+    # BACKSPACE
+    # ========================================================
+
+    def backspace(self):
+
+        if self.start_new_number:
+
+            return
+
+        if self.display_value == "Error":
+
+            self.clear()
+
+            return
+
+        raw = self.display_value.replace(
+            ",",
+            ""
+        )
+
+        if len(raw) <= 1:
+
+            raw = "0"
+
+        else:
+
+            raw = raw[:-1]
+
+            if raw in ("", "-"):
+
+                raw = "0"
+
+        self.display_value = self.add_commas(
+            raw
+        )
+
+        self.update_display()
+
+    # ========================================================
+    # DECIMAL CONVERSION
+    # ========================================================
+
+    def to_decimal(self, value):
+
+        return Decimal(
+            value.replace(",", "")
+        )
+
+    # ========================================================
+    # ADD COMMAS
+    # ========================================================
+
+    def add_commas(self, value):
+
+        if value == "Error":
+
+            return value
+
+        negative = value.startswith("-")
+
+        if negative:
+
+            value = value[1:]
+
+        if "." in value:
+
+            integer_part, decimal_part = value.split(
+                ".",
+                1
+            )
+
+        else:
+
+            integer_part = value
+            decimal_part = None
+
+        if integer_part == "":
+
+            integer_part = "0"
+
+        try:
+
+            integer_part = f"{int(integer_part):,}"
+
+        except ValueError:
+
+            integer_part = "0"
+
+        if decimal_part is not None:
+
+            result = (
+                integer_part
+                + "."
+                + decimal_part
+            )
+
+        else:
+
+            result = integer_part
+
+        if negative:
+
+            result = "-" + result
+
+        return result
+
+    # ========================================================
+    # FORMAT CALCULATION RESULT
+    # ========================================================
+
+    def format_result(self, number):
+
+        if number == 0:
+
+            return "0"
+
+        # 12 significant digits.
+        result = format(
+            number,
+            ".12g"
+        )
+
+        # Convert scientific notation to ordinary notation
+        # when reasonable.
+        if "e" in result.lower():
+
+            try:
+
+                result = format(
+                    number,
+                    ".12f"
+                ).rstrip("0").rstrip(".")
+
+            except Exception:
+
+                pass
+
+        # Always preserve leading zero.
+        if result.startswith("."):
+
+            result = "0" + result
+
+        elif result.startswith("-."):
+
+            result = "-0" + result[1:]
+
+        return self.add_commas(
+            result
+        )
+
+    # ========================================================
+    # UPDATE DISPLAY
+    # ========================================================
+
+    def update_display(self):
+
+        if not hasattr(
+            self,
+            "display"
+        ):
+
+            return
+
+        text = self.display_value
+
+        available_width = (
+            self.display.winfo_width()
+            - 40
+        )
+
+        if available_width < 100:
+
+            available_width = (
+                WINDOW_WIDTH
+                - 80
+            )
+
+        font_size = DISPLAY_FONT_SIZE
+
+        while font_size > DISPLAY_MIN_FONT_SIZE:
+
+            test_font = tkfont.Font(
+                family=FONT_MONO,
+                size=font_size
+            )
+
+            width = test_font.measure(
+                text
+            )
+
+            if width <= available_width:
+
+                break
+
+            font_size -= 1
+
+        self.display.configure(
+
+            text=text,
+
+            font=(
+                FONT_MONO,
+                font_size
+            ),
+
+            anchor="e",
+
+            justify="right"
+        )
+
+    # ========================================================
+    # WINDOW RESIZE
+    # ========================================================
+
+    def window_resized(self, event):
+
+        if event.widget == self.root:
+
+            self.update_display()
+
+
+# ============================================================
+# START
+# ============================================================
+
+if __name__ == "__main__":
+
+    root = tk.Tk()
+
+    app = QuailCalculator(
+        root
+    )
+
+    root.mainloop()

@@ -1,0 +1,198 @@
+name: Build BcalcOS APT repository
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'branding/**'
+      - 'config/**'
+      - 'distroapps/**'
+      - 'distroscripts/**'
+      - 'packages/bcalcos-base/**'
+      - 'packages/marp-cli/**'
+      - 'packages/qownnotes/**'
+      - 'packages/flacon/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-qownnotes:
+    runs-on: ubuntu-latest
+
+    container:
+      image: devuan/devuan:excalibur
+
+    steps:
+      - name: Check out BcalcOS
+        uses: actions/checkout@v4
+
+      - name: Install QOwnNotes build tools
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            debhelper \
+            dpkg-dev \
+            qmake6 \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            qt6-svg-dev \
+            qt6-websockets-dev \
+            qt6-tools-dev \
+            cmake \
+            pkg-config
+
+      - name: Build QOwnNotes package
+        run: |
+          packages/qownnotes/build-package.sh
+
+      - name: Upload QOwnNotes package
+        uses: actions/upload-artifact@v4
+        with:
+          name: qownnotes-deb
+          path: /tmp/qownnotes-build-*/qownnotes_*.deb
+
+  build-flacon:
+    runs-on: ubuntu-latest
+
+    container:
+      image: devuan/devuan:excalibur
+
+    steps:
+      - name: Check out BcalcOS
+        uses: actions/checkout@v4
+
+      - name: Install Flacon build tools
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            debhelper \
+            dpkg-dev \
+            cmake \
+            pkg-config \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            qt6-svg-dev \
+            qt6-websockets-dev \
+            qt6-tools-dev \
+            libuchardet-dev \
+            libtag1-dev
+
+      - name: Build Flacon package
+        run: |
+          packages/flacon/build-package.sh
+
+      - name: Upload Flacon package
+        uses: actions/upload-artifact@v4
+        with:
+          name: flacon-deb
+          path: /tmp/flacon-build-*/flacon_*.deb
+
+  build-apt-repository:
+    runs-on: ubuntu-latest
+
+    needs:
+      - build-qownnotes
+      - build-flacon
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out BcalcOS
+        uses: actions/checkout@v4
+
+      - name: Set up GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            debhelper \
+            dpkg-dev \
+            qmake6 \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            qt6-svg-dev \
+            qt6-websockets-dev \
+            cmake \
+            pkg-config \
+            libuchardet-dev \
+            libtag1-dev \
+            aptly
+
+      - name: Download QOwnNotes package
+        uses: actions/download-artifact@v4
+        with:
+          name: qownnotes-deb
+          path: qownnotes-package
+
+      - name: Download Flacon package
+        uses: actions/download-artifact@v4
+        with:
+          name: flacon-deb
+          path: flacon-package
+
+      - name: Set up APT signing key
+        env:
+          BCALCOS_APT_SIGNING_KEY: ${{ secrets.BCALCOS_APT_SIGNING_KEY }}
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -m 700 -p "$GNUPGHOME"
+          printf '%s\n' "$BCALCOS_APT_SIGNING_KEY" | gpg --batch --import
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+
+      - name: Build BcalcOS package
+        run: |
+          packages/bcalcos-base/build-package.sh
+
+      - name: Build Marp CLI package
+        run: |
+          packages/marp-cli/build-package.sh
+
+      - name: Build APT repository
+        run: |
+          rm -rf apt-repository
+          mkdir -p apt-repository
+
+          printf '%s\n' '{"rootDir":"'"$PWD"'/apt-repository"}' > aptly.conf
+
+          aptly -config=aptly.conf repo create bcalcos
+
+          aptly -config=aptly.conf repo add bcalcos \
+            /tmp/bcalcos-base-build-*/bcalcos-base_*.deb
+
+          aptly -config=aptly.conf repo add bcalcos \
+            /tmp/marp-cli-build-*/marp-cli_*.deb
+
+          QOWNNOTES_DEB=$(find qownnotes-package -type f -name '*.deb' -print -quit)
+          FLACON_DEB=$(find flacon-package -type f -name '*.deb' -print -quit)
+
+          aptly -config=aptly.conf repo add bcalcos "$QOWNNOTES_DEB"
+
+          aptly -config=aptly.conf repo add bcalcos "$FLACON_DEB"
+
+          aptly -config=aptly.conf publish repo \
+            -batch \
+            -distribution=bobwhite \
+            -architectures=amd64 \
+            -gpg-key=B812839232DBF0CBE140349B1F0660B27344C9AD \
+            bcalcos
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apt-repository/public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

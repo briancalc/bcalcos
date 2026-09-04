@@ -1,0 +1,5 @@
+marp-cli (4.5.0-1) bobwhite; urgency=medium
+
+  * Initial BcalcOS package of Marp CLI 4.5.0.
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Sat, 29 Aug 2026 10:34:41 -0500
