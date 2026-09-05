@@ -193,7 +193,20 @@ show_final_confirmation() {
         "$([[ "$FIRMWARE_MODE" == "uefi" ]] && echo "UEFI" || echo "Legacy BIOS")"
     printf '\n'
 }
-
-
+####################################
+show_shutdown_instructions() {
+    printf '\n'
+    printf '%s╔══════════════════════════════════════════════════════╗%s\n' \
+        "$C_SUCCESS$C_BOLD" "$C_RESET"
+    printf '%s║                  Next Steps                          ║%s\n' \
+        "$C_SUCCESS$C_BOLD" "$C_RESET"
+    printf '%s║                                                      ║%s\n' \
+        "$C_SUCCESS$C_BOLD" "$C_RESET"
+    printf '  ║1. Remove the USB once the machine is off.            ║%s\n' \
+    printf '  ║2. Reboot into the BcalcOS grub when ready.           ║%s\n' \
+    printf '%s╚══════════════════════════════════════════════════════╝%s\n' \
+        "$C_SUCCESS$C_BOLD" "$C_RESET"
+    printf '\n'
+}
 
 

@@ -35,7 +35,7 @@
 #  25.  cleanup
 #  26.  target unmount
 #  27.  final confirmation
-#  28.  reboot prompt
+#  28.  shutdown prompt
 # --test remains read-only.
 
 set -u
@@ -595,22 +595,24 @@ run_installation() {
 
     show_final_confirmation
 
-    printf '  Reboot now? [Y/n]: '
+    show_shutdown_instructions
 
-    local reboot_choice
-    if ! read -r reboot_choice; then
+    printf '  Power off now? [Y/n]: '
+
+    local poweroff_choice
+    if ! read -r poweroff_choice; then
         printf '\n'
         return 0
     fi
 
-    if [[ "$reboot_choice" =~ ^[Yy]$ || -z "$reboot_choice" ]]; then
+    if [[ "$poweroff_choice" =~ ^[Yy]$ || -z "$poweroff_choice" ]]; then
         info "Syncing filesystems..."
         sync
-        info "Rebooting in 3 seconds..."
-        sleep 3
-        reboot
+        info "Powering off in 5 seconds. Remove the USB once the machine is off."
+        sleep 5
+        poweroff
     else
-        info "Installation complete. You may reboot manually when ready."
+        info "Installation complete. You may power off manually when ready."
     fi
 
     return 0
