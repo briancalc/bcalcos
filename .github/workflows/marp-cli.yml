@@ -1,0 +1,104 @@
+name: Build Marp CLI package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/marp-cli/**'
+      - '.github/workflows/marp-cli.yml'
+
+concurrency:
+  group: apt-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out BcalcOS
+        uses: actions/checkout@v4
+
+      - name: Set up GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            debhelper \
+            dpkg-dev \
+            qmake6 \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            qt6-svg-dev \
+            qt6-websockets-dev \
+            cmake \
+            pkg-config \
+            libuchardet-dev \
+            libtag1-dev \
+            aptly
+
+      - name: Download existing packages
+        run: |
+          BASE_URL="https://briancalc.github.io/bcalcos"
+          curl -fsSL "$BASE_URL/dists/bobwhite/main/binary-amd64/Packages" -o Packages
+          mkdir -p existing-packages
+          for pkg in bcalcos-base qownnotes flacon; do
+            fname=$(awk -v p="$pkg" '/^Package: /{cur=$2} /^Filename: /{if (cur==p){print $2; exit}}' Packages)
+            [ -n "$fname" ] || { echo "ERROR: $pkg not found in repository index" >&2; exit 1; }
+            curl -fsSL "$BASE_URL/$fname" -o "existing-packages/$(basename "$fname")"
+          done
+
+      - name: Set up APT signing key
+        env:
+          BCALCOS_APT_SIGNING_KEY: ${{ secrets.BCALCOS_APT_SIGNING_KEY }}
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -m 700 -p "$GNUPGHOME"
+          printf '%s\n' "$BCALCOS_APT_SIGNING_KEY" | gpg --batch --import
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+
+      - name: Build Marp CLI package
+        run: |
+          packages/marp-cli/build-package.sh
+
+      - name: Build APT repository
+        run: |
+          rm -rf apt-repository
+          mkdir -p apt-repository
+
+          printf '%s\n' '{"rootDir":"'"$PWD"'/apt-repository"}' > aptly.conf
+
+          aptly -config=aptly.conf repo create bcalcos
+          aptly -config=aptly.conf repo add bcalcos \
+            /tmp/marp-cli-build-*/marp-cli_*.deb
+          aptly -config=aptly.conf repo add bcalcos existing-packages/*.deb
+
+          aptly -config=aptly.conf publish repo \
+            -batch \
+            -distribution=bobwhite \
+            -architectures=amd64 \
+            -gpg-key=B812839232DBF0CBE140349B1F0660B27344C9AD \
+            bcalcos
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apt-repository/public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
