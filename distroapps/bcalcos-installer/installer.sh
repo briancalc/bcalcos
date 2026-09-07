@@ -5,7 +5,7 @@
 # 
 # Installation orchestration
 # Associated files: 
-# common.sh, disks.sh, install.sh, partition.sh, preflight.sh, ui.sh
+# common.sh, crypto.sh, disks.sh, install.sh, partition.sh, preflight.sh, ui.sh
 #
 # The installer pipeline is:
 #   1.  preflight
@@ -27,11 +27,11 @@
 #  17.  hostname generation
 #  18.  machine-id generation
 #  19.  fstab generation
-#  20.  hibernation/resume configuration
+#  20.  crypttab generation (encrypted swap; optional LUKS home)
 #  21.  live-boot cleanup
 #  22.  GRUB installation (UEFI or BIOS) + stub configuration (UEFI only)
 #  23.  GRUB branding installation
-#  24.  GRUB configuration generation (+ initramfs rebuild)
+#  24.  GRUB configuration generation
 #  25.  cleanup
 #  26.  target unmount
 #  27.  final confirmation
@@ -49,6 +49,7 @@ source "$SCRIPT_DIR/lib/preflight.sh"
 source "$SCRIPT_DIR/lib/disks.sh"
 source "$SCRIPT_DIR/lib/partition.sh"
 source "$SCRIPT_DIR/lib/install.sh"
+source "$SCRIPT_DIR/lib/crypto.sh"
 
 TEST_MODE=0
 
@@ -307,6 +308,7 @@ cleanup_on_exit() {
 
     INSTALL_PASSWORD=""
     INSTALL_PASSWORD_CONFIRM=""
+    clear_luks_passwords
 
     if [[ -n "$DISK_IDENTITY_FILE" && -f "$DISK_IDENTITY_FILE" ]]; then
         rm -f -- "$DISK_IDENTITY_FILE" 2>/dev/null || true
@@ -329,6 +331,10 @@ run_installation() {
 
     if ! collect_install_user; then
         fatal "Unable to collect installed-user credentials."
+    fi
+
+    if ! collect_home_encryption; then
+        fatal "Unable to collect encryption preferences."
     fi
 
     if ! collect_hostname; then
@@ -359,11 +365,13 @@ run_installation() {
         fatal "Filesystem creation failed."
     fi
 
+    clear_luks_passwords
+
     section "Mount Target"
 
     if ! mount_target \
         "$TARGET_ROOT_PARTITION" \
-        "$TARGET_HOME_PARTITION" \
+        "$TARGET_HOME_DEVICE" \
         "$TARGET_ESP"; then
         fatal "Unable to mount installation target."
     fi
@@ -405,7 +413,7 @@ run_installation() {
         fatal "Installation aborted."
     fi
 
-     section "Configure Admin User"
+    section "Configure Admin User"
 
     if ! configure_admin_user "$INSTALL_USERNAME"; then
         error "Admin user configuration failed."
@@ -459,7 +467,7 @@ run_installation() {
         "$TARGET_ESP" \
         "$TARGET_ROOT_PARTITION" \
         "$TARGET_SWAP" \
-        "$TARGET_HOME_PARTITION"; then
+        "$TARGET_HOME_DEVICE"; then
         error "fstab generation failed."
 
         if ! unmount_target; then
@@ -469,10 +477,12 @@ run_installation() {
         fatal "Installation aborted."
     fi
 
-    section "Configure Hibernation"
+    section "Generate crypttab"
 
-    if ! configure_hibernation "$TARGET_SWAP"; then
-        error "Hibernation configuration failed."
+    if ! generate_crypttab \
+        "$TARGET_SWAP" \
+        "$TARGET_HOME_PARTITION"; then
+        error "crypttab generation failed."
 
         if ! unmount_target; then
             error "Target unmount also failed."
@@ -590,6 +600,7 @@ run_installation() {
 
     INSTALL_PASSWORD=""
     INSTALL_PASSWORD_CONFIRM=""
+    clear_luks_passwords
 
     rm -f "$DISK_IDENTITY_FILE" 2>/dev/null || true
 

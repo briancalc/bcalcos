@@ -14,9 +14,9 @@ REQUIRED_COMMANDS=(
     lsblk
     partprobe
     sgdisk
+    cryptsetup
     mkfs.fat
     mkfs.ext4
-    mkswap
     mount
     umount
     unsquashfs
@@ -25,7 +25,6 @@ REQUIRED_COMMANDS=(
     mkpasswd
     grub-install
     grub-mkconfig
-    update-initramfs
 )
 
 preflight_tools() {

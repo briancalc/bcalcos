@@ -108,7 +108,7 @@ show_memory() {
     section "Memory"
 
     printf '  Detected RAM: %s GiB\n' "$RAM_GIB"
-    printf '  V1 swap rule: RAM × 1, minimum 2 GiB\n'
+    printf '  V1 swap rule: RAM × 1, minimum 2 GiB (overflow headroom)\n'
 }
 
 show_partition_plan() {
@@ -151,13 +151,13 @@ show_partition_plan() {
     printf '  %-20s %-12s %-10s %s\n' \
         "Swap" \
         "${SWAP_SIZE_GIB} GiB" \
-        "swap" \
+        "swap (enc)" \
         "-"
 
     printf '  %-20s %-12s %-10s %s\n' \
         "Home" \
         "${HOME_SIZE_GIB} GiB" \
-        "ext4" \
+        "$( [[ ${INSTALL_ENCRYPT_HOME:-0} -eq 1 ]] && printf 'ext4 (LUKS)' || printf 'ext4' )" \
         "/home"
 
     printf '\n'
@@ -165,7 +165,11 @@ show_partition_plan() {
     printf '    EFI:   EFI\n'
     printf '    Root:  rootfs\n'
     printf '    Home:  home\n'
-    printf '    Swap:  swap\n'
+    printf '\n'
+    printf '  Encryption:  %s\n' \
+        "$( [[ ${INSTALL_ENCRYPT_HOME:-0} -eq 1 ]] && echo "Home (LUKS)" || echo "None")"
+    printf '\n'
+    printf '  Swap is encrypted with a per-boot random key (no hibernation).\n'
     printf '\n'
 }
 ####################################
@@ -191,6 +195,8 @@ show_final_confirmation() {
     printf '  Timezone:    %s\n' "$INSTALL_TIMEZONE"
     printf '  Firmware:    %s\n' \
         "$([[ "$FIRMWARE_MODE" == "uefi" ]] && echo "UEFI" || echo "Legacy BIOS")"
+    printf '  Encryption:  %s\n' \
+        "$( [[ ${INSTALL_ENCRYPT_HOME:-0} -eq 1 ]] && echo "Home (LUKS)" || echo "None")"
     printf '\n'
 }
 ####################################
@@ -202,11 +208,11 @@ show_shutdown_instructions() {
         "$C_SUCCESS$C_BOLD" "$C_RESET"
     printf '%s║                                                      ║%s\n' \
         "$C_SUCCESS$C_BOLD" "$C_RESET"
-    printf '  ║1. Remove the USB once the machine is off.            ║%s\n' \
-    printf '  ║2. Reboot into the BcalcOS grub when ready.           ║%s\n' \
+    printf '%s║ 1. Remove the USB once the machine is off.           ║%s\n' \
+        "$C_SUCCESS$C_BOLD" "$C_RESET"
+    printf '%s║  2. Reboot into the BcalcOS grub when ready.         ║%s\n' \
+        "$C_SUCCESS$C_BOLD" "$C_RESET"
     printf '%s╚══════════════════════════════════════════════════════╝%s\n' \
         "$C_SUCCESS$C_BOLD" "$C_RESET"
     printf '\n'
 }
-
-

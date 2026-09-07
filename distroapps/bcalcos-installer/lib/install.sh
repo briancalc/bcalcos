@@ -11,10 +11,10 @@
 #   - generating fstab
 #   - generating hostname/hosts
 #   - generating machine-id
-#   - configuring hibernation/resume
 #   - cleaning up live-boot components
+#   - generating crypttab (encrypted swap; optional LUKS home)
 #   - configuring GRUB (BIOS/UEFI install, branding, config generation)
-#   - chroot operations (grub-mkconfig, update-initramfs, dpkg)
+#   - chroot operations (grub-mkconfig, dpkg)
 #
 # It does NOT:
 #   - partition disks (handled by partition.sh)
@@ -27,10 +27,10 @@
 TARGET_ROOT=""
 TARGET_HOME=""
 TARGET_EFI=""
-
+###########################
 mount_target() {
     local root_partition="$1"
-    local home_partition="$2"
+    local home_device="${2:-}"
     local esp_partition="${3:-}"
 
     if [[ -z "$root_partition" || ! -b "$root_partition" ]]; then
@@ -38,8 +38,11 @@ mount_target() {
         return 1
     fi
 
-    if [[ -z "$home_partition" || ! -b "$home_partition" ]]; then
-        error "Invalid home partition: $home_partition"
+    # The home argument is TARGET_HOME_DEVICE, which may be either the
+    # raw partition (unencrypted) or /dev/mapper/home_crypt (encrypted).
+    # Callers pass the device chosen in create_filesystems().
+    if [[ -z "$home_device" || ! -b "$home_device" ]]; then
+        error "Invalid home device: $home_device"
         return 1
     fi
 
@@ -72,7 +75,7 @@ mount_target() {
     mkdir -p "$TARGET_HOME"
 
     info "Mounting home filesystem..."
-    if ! mount "$home_partition" "$TARGET_HOME"; then
+    if ! mount "$home_device" "$TARGET_HOME"; then
         error "Failed to mount home filesystem."
         umount "$TARGET_ROOT" 2>/dev/null || true
         rmdir "$TARGET_ROOT" 2>/dev/null || true
@@ -105,6 +108,7 @@ mount_target() {
 }
 
 
+##########################
 extract_snapshot() {
     local snapshot="$1"
 
@@ -131,8 +135,7 @@ extract_snapshot() {
 
     return 0
 }
-
-
+#################
 unmount_target() {
     local failed=0
 
@@ -164,17 +167,29 @@ unmount_target() {
         return 1
     fi
 
+    # Close the home LUKS mapper if it is open.
+    # This is safe only AFTER the home filesystem has been unmounted,
+    # which is why it sits behind the failed-unmount guard above.
+    # Guarded internally: no-op when the mapper does not exist
+    # (unencrypted installs).
+    if ! close_luks_home; then
+        error "Failed to close home LUKS container."
+        return 1
+    fi
+
     rmdir "$TARGET_ROOT" 2>/dev/null || true
 
     TARGET_ROOT=""
     TARGET_HOME=""
     TARGET_EFI=""
+    TARGET_HOME_DEVICE=""
 
     success "Target filesystems unmounted."
 
     return 0
 }
-#########################3
+
+#########################
 transform_installed_user() {
     local new_username="$1"
     local old_username="isouser"
@@ -220,7 +235,7 @@ transform_installed_user() {
         --login "$new_username" \
         --home "/home/$new_username" \
         --move-home \
-	--comment "$new_username" \
+        --comment "$new_username" \
         "$old_username"; then
         error "Failed to rename installed user."
         return 1
@@ -448,83 +463,6 @@ generate_hostname() {
 
     return 0
 }
-
-#########################################
-configure_hibernation() {
-    local swap_partition="$1"
-    local swap_uuid
-    local grub_default="$TARGET_ROOT/etc/default/grub"
-
-    if [[ -z "$TARGET_ROOT" || ! -d "$TARGET_ROOT" ]]; then
-        error "Target root is not mounted."
-        return 1
-    fi
-
-    if [[ -z "$swap_partition" || ! -b "$swap_partition" ]]; then
-        error "Invalid swap partition: $swap_partition"
-        return 1
-    fi
-
-    info "Configuring hibernation/resume..."
-
-    # Get swap UUID
-    swap_uuid="$(blkid -s UUID -o value "$swap_partition")" || {
-        error "Unable to read swap filesystem UUID."
-        return 1
-    }
-
-    if [[ -z "$swap_uuid" ]]; then
-        error "Swap filesystem UUID is missing."
-        return 1
-    fi
-
-    # Create directory for resume config if it doesn't exist
-    mkdir -p "$TARGET_ROOT/etc/initramfs-tools/conf.d"
-
-    # Write RESUME variable to initramfs config
-    printf 'RESUME=UUID=%s\n' "$swap_uuid" > "$TARGET_ROOT/etc/initramfs-tools/conf.d/resume"
-
-    if [[ ! -s "$TARGET_ROOT/etc/initramfs-tools/conf.d/resume" ]]; then
-        error "Failed to create /etc/initramfs-tools/conf.d/resume."
-        return 1
-    fi
-
-    success "Initramfs resume configured: $swap_uuid"
-
-    # Also add resume=UUID to GRUB kernel command line
-    # This ensures the kernel knows which device to resume from at boot
-    if [[ -f "$grub_default" ]]; then
-        info "Updating GRUB kernel parameters..."
-
-        # Create backup
-        cp -f "$grub_default" "${grub_default}.installer-backup"
-
-        # Read current GRUB_CMDLINE_LINUX_DEFAULT
-        local current_params
-        current_params="$(grep '^GRUB_CMDLINE_LINUX_DEFAULT=' "$grub_default" | head -1)"
-
-        if [[ -n "$current_params" ]]; then
-            # Check if resume= is already present
-            if echo "$current_params" | grep -q 'resume='; then
-                info "GRUB already contains resume parameter; leaving unchanged."
-            else
-                # Extract current value, append resume=UUID, and rewrite
-                local quoted_params
-                quoted_params="$(echo "$current_params" | sed 's/GRUB_CMDLINE_LINUX_DEFAULT=\(.*\)/\1/' | tr -d '"')"
-
-                if [[ -z "$quoted_params" ]]; then
-                    printf 'GRUB_CMDLINE_LINUX_DEFAULT="resume=UUID=%s"\n' "$swap_uuid" >> "$grub_default"
-                else
-                    sed -i "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"${quoted_params} resume=UUID=${swap_uuid}\"/" "$grub_default"
-                fi
-
-                success "Added resume=UUID to GRUB_CMDLINE_LINUX_DEFAULT"
-            fi
-        fi
-    fi
-
-    return 0
-}
 ####################################
 cleanup_live_boot() {
     if [[ -z "$TARGET_ROOT" || ! -d "$TARGET_ROOT" ]]; then
@@ -612,20 +550,12 @@ cleanup_live_boot() {
 
 ########################################
 cleanup() {
-    local grub_backup="$TARGET_ROOT/etc/default/grub.installer-backup"
-
     if [[ -z "$TARGET_ROOT" || ! -d "$TARGET_ROOT" ]]; then
         error "Target root is not mounted."
         return 1
     fi
 
     info "Cleaning up installation artifacts..."
-
-    # Remove GRUB backup file created during hibernation configuration
-    if [[ -f "$grub_backup" ]]; then
-        rm -f "$grub_backup"
-        info "Removed GRUB backup: ${grub_backup#"$TARGET_ROOT"}"
-    fi
 
     # Remove installer icon from user's desktop (keep Start menu entry)
     local desktop_file="$TARGET_ROOT/home/$INSTALL_USERNAME/Desktop/bcalcos-installer.desktop"
@@ -656,7 +586,6 @@ verify_installation() {
     local username="$1"
     local passed=0
     local failed=0
-    local check
 
     if [[ -z "$TARGET_ROOT" || ! -d "$TARGET_ROOT" ]]; then
         error "Target root is not mounted."
@@ -733,11 +662,23 @@ verify_installation() {
     check_grep "Root account is locked" \
         '^root:!' "$TARGET_ROOT/etc/shadow"
 
-    # Hibernation
-    check "Resume config exists" \
-        "$TARGET_ROOT/etc/initramfs-tools/conf.d/resume"
-    check_grep "Swap UUID present in fstab" \
-        '^UUID=.*none.*swap' "$TARGET_ROOT/etc/fstab"
+    # Encrypted swap (crypttab drives cryptdisks at boot)
+    check "crypttab exists" \
+        "$TARGET_ROOT/etc/crypttab"
+    check_grep "crypttab has cryptswap entry" \
+        '^cryptswap[[:space:]]+PARTUUID=' "$TARGET_ROOT/etc/crypttab"
+    check_grep "fstab activates cryptswap mapper" \
+        '^/dev/mapper/cryptswap[[:space:]].*swap' "$TARGET_ROOT/etc/fstab"
+
+    # Home encryption (conditional)
+    if (( ${INSTALL_ENCRYPT_HOME:-0} == 1 )); then
+        check_grep "crypttab has home_crypt entry" \
+            '^home_crypt[[:space:]]+PARTUUID=.*[[:space:]]none[[:space:]]+luks' \
+            "$TARGET_ROOT/etc/crypttab"
+        check_grep "fstab references mapper filesystem UUID" \
+            "^UUID=$(blkid -s UUID -o value "$TARGET_HOME_DEVICE")" \
+            "$TARGET_ROOT/etc/fstab"
+    fi
 
     # Live-boot cleanup
     check_absent "/etc/live removed" \
@@ -813,7 +754,6 @@ generate_fstab() {
     local home="$4"
 
     local root_uuid
-    local swap_uuid
     local home_uuid
     local esp_uuid
 
@@ -833,7 +773,7 @@ generate_fstab() {
     fi
 
     if [[ -z "$home" || ! -b "$home" ]]; then
-        error "Invalid home partition: $home"
+        error "Invalid home device: $home"
         return 1
     fi
 
@@ -852,17 +792,12 @@ generate_fstab() {
         return 1
     }
 
-    swap_uuid="$(blkid -s UUID -o value "$swap")" || {
-        error "Unable to read swap UUID."
-        return 1
-    }
-
     home_uuid="$(blkid -s UUID -o value "$home")" || {
         error "Unable to read home filesystem UUID."
         return 1
     }
 
-    if [[ -z "$root_uuid" || -z "$swap_uuid" || -z "$home_uuid" ]]; then
+    if [[ -z "$root_uuid" || -z "$home_uuid" ]]; then
         error "One or more required filesystem UUIDs are missing."
         return 1
     fi
@@ -886,9 +821,11 @@ generate_fstab() {
         printf '%s\n' '# Generated by BCALCOS Linux Installer.'
         printf '%s\n' '#'
         printf '%s\n' '# Filesystems are identified by UUID.'
-
+        printf '%s\n' '#'
+        printf '%s\n' '# Swap is opened as /dev/mapper/cryptswap by the'
+        printf '%s\n' '# cryptdisks init script (see /etc/crypttab).'
         printf 'UUID=%s  /          ext4  defaults,errors=remount-ro  0 1\n' "$root_uuid"
-        printf 'UUID=%s  none       swap  sw        0 0\n' "$swap_uuid"
+        printf '%s  none       swap  sw        0 0\n' "/dev/mapper/cryptswap"
         printf 'UUID=%s  /home      ext4  defaults  0 2\n' "$home_uuid"
 
         if [[ "$FIRMWARE_MODE" == "uefi" ]]; then
@@ -1155,15 +1092,6 @@ generate_grub_config() {
     if ! chroot "$TARGET_ROOT" /usr/sbin/grub-mkconfig \
         -o /boot/grub/grub.cfg; then
         error "Failed to generate GRUB configuration."
-        unmount_chroot_mounts
-        return 1
-    fi
-
-    # Rebuild initramfs to embed the resume parameter
-    info "Rebuilding initramfs for hibernation support..."
-
-    if ! chroot "$TARGET_ROOT" /usr/sbin/update-initramfs -k all -u; then
-        error "Failed to rebuild initramfs."
         unmount_chroot_mounts
         return 1
     fi

@@ -418,7 +418,7 @@ wait_for_partitions() {
 #   $4 = home partition
 #
 # No mounting or extraction is performed here.
-
+##########################
 create_filesystems() {
     local esp="$1"
     local root="$2"
@@ -450,6 +450,32 @@ create_filesystems() {
         return 1
     fi
 
+    # Resolve the home device through the encryption choice:
+    #   - encrypted:   LUKS2 container is created and opened on the
+    #                  raw partition; TARGET_HOME_DEVICE becomes the
+    #                  mapper (/dev/mapper/home_crypt).
+    #   - unencrypted: TARGET_HOME_DEVICE is the raw partition itself.
+    #
+    # Everything below formats TARGET_HOME_DEVICE and never touches
+    # the raw partition in the encrypted case.
+    TARGET_HOME_DEVICE=""
+
+    if (( ${INSTALL_ENCRYPT_HOME:-0} == 1 )); then
+        if ! setup_luks_home "$home"; then
+            error "Failed to set up LUKS encryption for home."
+            return 1
+        fi
+    else
+        TARGET_HOME_DEVICE="$home"
+    fi
+
+    export TARGET_HOME_DEVICE
+
+    if [[ -z "$TARGET_HOME_DEVICE" || ! -b "$TARGET_HOME_DEVICE" ]]; then
+        error "Invalid home device: $TARGET_HOME_DEVICE"
+        return 1
+    fi
+
     if [[ "$FIRMWARE_MODE" == "uefi" ]]; then
         info "Formatting EFI System Partition..."
         if ! mkfs.fat -F 32 -n EFI "$esp"; then
@@ -464,14 +490,15 @@ create_filesystems() {
         return 1
     fi
 
-    info "Creating swap..."
-    if ! mkswap -L swap "$swap"; then
-        error "Failed to create swap."
-        return 1
-    fi
+    # NOTE: The swap partition is intentionally NOT initialized here.
+    # No mkswap is run and no signature is written. On the installed
+    # system, cryptdisks opens a plain dm-crypt mapping with a random
+    # per-boot key and runs mkswap on the mapper device
+    # (/dev/mapper/cryptswap) at every boot. See lib/crypto.sh,
+    # generate_crypttab(), and the matching /etc/fstab entry.
 
     info "Formatting home filesystem..."
-    if ! mkfs.ext4 -F -L home "$home"; then
+    if ! mkfs.ext4 -F -L home "$TARGET_HOME_DEVICE"; then
         error "Failed to format home filesystem."
         return 1
     fi
@@ -480,5 +507,4 @@ create_filesystems() {
 
     return 0
 }
-
 ####################
