@@ -5,4 +5,4 @@ Name=BcalcOS Welcome
 Exec=/usr/bin/bcalcos_welcome
 Icon=/usr/share/bcalcosbrand/standing.icon
 Terminal=false
-Categories=Utility
+Categories=BcalcOS;

@@ -952,7 +952,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		major_grid.attach(
-			multimedia_card,
+			office_card,
 			0,
 			0,
 			1,
@@ -960,7 +960,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		major_grid.attach(
-			graphics_card,
+			multimedia_card,
 			1,
 			0,
 			1,
