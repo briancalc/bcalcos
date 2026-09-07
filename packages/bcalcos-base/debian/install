@@ -19,5 +19,8 @@ branding/bcalcosbrand/*    usr/share/bcalcosbrand/
 #branding/skelnew/.config/xfce4/desktop/accels.scm    etc/skel/.config/xfce4/desktop/
 #branding/skelnew/.config/xfce4/xfconf/xfce-perchannel-xml/*   etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/
 #branding/skelnew/.config/xfce4/helpers.rc   etc/skel/.config/xfce4/
-distroapps/desktop-files/*	usr/share/applications/
+distroapps/desktop-files/bcalcos-installer.desktop    usr/share/applications/
+distroapps/desktop-files/bcalcos_welcome.desktop    usr/share/applications/
+distroapps/desktop-files/quail_calc.desktop    usr/share/applications/
+distroapps/desktop-files/quail_reminder.desktop    usr/share/applications/
 branding/bcalcosbrand/.face.icon    usr/share/bcalcosbrand/
