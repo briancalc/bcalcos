@@ -59,18 +59,18 @@ APPS_CONFIG = {
 		("LibreOffice", None),
 		("Screenshot", None),
 		("MousePad", None),
-		("Marp", None),
+		("QOwnNotes", None),
 		("Atril", None),
 		("PDF Arranger", None),
 	],
 
-	"Media": [
+	"Multimedia": [
 		("GIMP", None),
 		("OBS Studio", None),
 		("VLC", None),
 		("Audacity", None),
 		("mtpaint", None),
-		("Ristretto", None),
+		("Flacon", None),
 		("Inkscape", None),
 		("Darktable", None),
 	],
@@ -96,41 +96,6 @@ APPS_CONFIG = {
 		("UFW Help Wiki", None),
 		("ClamAV Userdoc", None),
 	],
-}
-
-
-PACKAGE_MAP = {
-	"Gnumeric": "gnumeric",
-	"AbiWord": "abiword",
-	"LibreOffice": "libreoffice",
-	"Marp": "marp",
-	"Screenshot": "xfce4-screenshooter",
-	"MousePad": "mousepad",
-	"mtpaint": "mtpaint",
-	"Ristretto": "ristretto",
-	"GIMP": "gimp",
-	"OBS Studio": "obs-studio",
-	"VLC": "vlc",
-	"Audacity": "audacity",
-	"GParted": "gparted",
-	"BackinTime": "backintime-qt",
-	"KeePassXC": "keepassxc",
-	"gocryptfs": "gocryptfs",
-	"ClamAV": "clamav",
-	"WireGuard": "wireguard",
-	"Task Manager": "xfce4-taskmanager",
-	"Atril": "atril",
-	"PDF Arranger": "pdfarranger",
-	"Inkscape": "inkscape",
-	"Darktable": "darktable",
-}
-
-DOCS_URLS = {
-	"Devuan Website": "https://www.devuan.org/os/community",
-	"AppArmor Userdoc": "https://wiki.debian.org/AppArmor",
-	"WireGuard Quick Start": "https://www.wireguard.com/quickstart/",
-	"UFW Help Wiki": "https://help.ubuntu.com/community/UFW",
-	"ClamAV Userdoc": "https://docs.clamav.net/",
 }
 
 #####add keyboard selection support####
@@ -188,14 +153,14 @@ ICON_NAMES = {
 	"Gnumeric": "x-office-spreadsheet-symbolic",
 	"AbiWord": "x-office-document-symbolic",
 	"LibreOffice": "x-office-document",
-	"Marp": "x-office-presentation-symbolic",
+	"QOwnNotes": "accessories-text-editor-symbolic",
 	"Atril": "x-office-document-symbolic",
 	"PDF Arranger": "view-paged-symbolic",
 	"Screenshot": "camera-photo-symbolic",
 	"MousePad": "accessories-text-editor-symbolic",
 	"GIMP": "applications-graphics-symbolic",
 	"mtpaint": "applications-graphics-symbolic",
-	"Ristretto": "image-x-generic-symbolic",
+	"Flacon": "audio-x-generic-symbolic",
 	"Inkscape": "applications-graphics-symbolic",
 	"Darktable": "camera-photo-symbolic",
 	"OBS Studio": "camera-web-symbolic",
@@ -982,12 +947,12 @@ class WelcomeApp(Gtk.Window):
 			"Office"
 		)
 
-		graphics_card = self._create_category_card(
-			"Media"
+		multimedia_card = self._create_category_card(
+			"Multimedia"
 		)
 
 		major_grid.attach(
-			office_card,
+			multimedia_card,
 			0,
 			0,
 			1,
@@ -1295,7 +1260,7 @@ class WelcomeApp(Gtk.Window):
 
 		if is_installed is True:
 
-			if app_name == ("MousePad", "Atril"):
+			if app_name in ("MousePad", "Atril"):
 				# MousePad is installed-only and not removable.
 				status_label.set_text(
 					"✓ Installed"
@@ -1415,7 +1380,7 @@ class WelcomeApp(Gtk.Window):
 			return
 
 		# MousePad & Atril are installed-only and not removable.
-		if app_name == ("MousePad", "Atril"):
+		if app_name in ("MousePad", "Atril"):
 			return
 
 		if app_name == "Run Updates":
@@ -1781,7 +1746,7 @@ class WelcomeApp(Gtk.Window):
 				"status-installed"
 			)
 
-			if app_name == ("MousePad", "Atril"):
+			if app_name in ("MousePad", "Atril"):
 				status.set_text(
 					"✓ Installed"
 				)

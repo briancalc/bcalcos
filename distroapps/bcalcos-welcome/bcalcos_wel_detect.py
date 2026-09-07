@@ -3,7 +3,6 @@
 #v1.0
 
 import subprocess
-import os
 
 # ============================================================
 # PACKAGE MAPPING (display name → apt package)
@@ -15,9 +14,9 @@ PACKAGE_MAP = {
     "LibreOffice": "libreoffice",
     "Screenshot": "xfce4-screenshooter",
     "MousePad": "mousepad",
-    "Marp": "marp",
+    "QOwnNotes": "qownnotes",
     "mtpaint": "mtpaint",
-    "Ristretto": "ristretto",
+    "Flacon": "flacon",
     "GIMP": "gimp",
     "OBS Studio": "obs-studio",
     "VLC": "vlc",
@@ -35,10 +34,6 @@ PACKAGE_MAP = {
     "Darktable": "darktable",
 }
 
-# Binary paths for non-repo installations
-BINARY_PATHS = {
-    "Marp": "/usr/local/bin/marp",
-}
 
 # Documentation URLs (these stay as None status)
 DOCS_URLS = {
@@ -74,18 +69,6 @@ def check_package_installed(package_name):
         return False
 
 
-def check_binary_exists(binary_path):
-    """
-    Check if a binary executable exists at a specific path and is executable.
-    Used for non-repo installations like Marp.
-    """
-    try:
-        return os.path.isfile(binary_path) and os.access(binary_path, os.X_OK)
-    except Exception as e:
-        print(f"WARNING: Binary check failed for '{binary_path}': {e}")
-        return False
-
-
 def detect_all_statuses(app_config):
     """
     Scan APPS_CONFIG and build a dictionary of actual installation states.
@@ -102,11 +85,7 @@ def detect_all_statuses(app_config):
             # Documentation stay as None
             elif app_name in DOCS_URLS:
                 status_map[app_name] = None
-            
-            # Binary installs (Marp)
-            elif app_name in BINARY_PATHS:
-                status_map[app_name] = check_binary_exists(BINARY_PATHS[app_name])
-            
+                       
             # Regular apt packages
             elif app_name in PACKAGE_MAP:
                 pkg = PACKAGE_MAP[app_name]
