@@ -4,8 +4,9 @@
 2. [Who is this for?](#2-who-is-this-for)
 3. [Features](#3-features)
 4. [Installation Guide](#4-installation-guide)
-5. [Getting Help](#5-getting-help)
-6. [License](#6-license)
+5. [LLM Use](#5-llm-use)
+6. [Getting Help](#6-getting-help)
+7. [License](#6-license)
 
 ---
 
@@ -23,9 +24,7 @@ See https://bcalcos.org/whypage for further discussion.
 
 BcalcOS Linux is for, well, me.
 
-And anyone else interested in a stable Linux distribution that is systemd free, XLibre, and a minimalist but solid foundation upon which to customize your system your way. (once we get past the Alpha release!)
-
-Note:  AI (or LLMs I guess) were used in creating BcalcOS.  I have the same qualms regarding AI as do most folks, e.g. its inherent biases, potential to advance centralized control, and job displacement.  For me, LLMs are just tools, sometimes very helpful while other times, well, a waste of time.  I've only used the free versions so perhaps that colors my opinion.  Sharing this so users can decide whether that matters before trying the distro.
+And anyone else interested in a stable Linux distribution that is systemd free, XLibre by default, and neither a minimalist nor bloated foundation upon which to customize your system your way. 
 
 ---
 
@@ -46,7 +45,7 @@ See https://bcalcos.org/techpage for additional information.
 
 **For installation on secondary machine only.**
 
-BcalcOS (Alpha release) utilizes a custom installer.
+BcalcOS utilizes a custom, terminal based installer.
 
 See https://bcalcos.org/installpage for installation instructions.
 
@@ -54,13 +53,19 @@ See https://sourceforge.net/projects/bcalcos-linux/files/ for direct link to ISO
 
 ---
 
-## 5. Getting Help
+## 5. LLM Use
 
-- Bug reports & suggestions: https://github.com/briancalc/bcalcos/issues
+AI (or LLMs I guess) were used in creating BcalcOS.  I have the same qualms regarding AI as do most folks, e.g. its inherent biases, potential to advance centralized control, and job displacement.  For me, LLMs are just tools, sometimes very helpful while other times, well, a waste of time.  I've only used the free versions so perhaps that colors my opinion.  Sharing this so users can decide whether that matters before trying the distro.
 
 ----
 
-## 6. License
+## 6. Getting Help
+
+- Bug reports: https://github.com/briancalc/bcalcos/issues
+- Community forum: https://bcalcos.discourse.group/
+
+----
+## 7. License
 
 BcalcOS Linux is distributed WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

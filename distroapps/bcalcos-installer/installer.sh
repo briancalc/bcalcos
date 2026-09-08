@@ -7,36 +7,6 @@
 # Associated files: 
 # common.sh, crypto.sh, disks.sh, install.sh, partition.sh, preflight.sh, ui.sh
 #
-# The installer pipeline is:
-#   1.  preflight
-#   2.  firmware detection
-#   3.  live-media detection
-#   4.  snapshot detection
-#   5.  memory detection
-#   6.  target disk selection
-#   7.  partition planning
-#   8.  explicit destructive-operation confirmation
-#   9.  partition creation
-#  10.  filesystem creation
-#  11.  target mounting
-#  12.  snapshot extraction
-#  13.  installed-user transformation
-#  14.  password installation
-#  15.  admin user configuration (lock root + sudo)
-#  16.  timezone selection
-#  17.  hostname generation
-#  18.  machine-id generation
-#  19.  fstab generation
-#  20.  crypttab generation (encrypted swap; optional LUKS home)
-#  21.  live-boot cleanup
-#  22.  GRUB installation (UEFI or BIOS) + stub configuration (UEFI only)
-#  23.  GRUB branding installation
-#  24.  GRUB configuration generation
-#  25.  cleanup
-#  26.  target unmount
-#  27.  final confirmation
-#  28.  shutdown prompt
-# --test remains read-only.
 
 set -u
 set -o pipefail

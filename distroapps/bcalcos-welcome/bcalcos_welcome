@@ -86,7 +86,7 @@ APPS_CONFIG = {
 		("Task Manager", None),
 	],
 
-	"Sundry": [
+	"Sundries": [
 		("Run Updates", None),
 		("Keyboard Layout", None),
 		("Create New User", None),
@@ -975,7 +975,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		# ----------------------------------------------------
-		# System + Sundry
+		# System + Sundries
 		# ----------------------------------------------------
 
 		lower_grid = Gtk.Grid()
@@ -988,7 +988,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		documentation_card = self._create_category_card(
-			"Sundry"
+			"Sundries"
 		)
 
 		lower_grid.attach(
