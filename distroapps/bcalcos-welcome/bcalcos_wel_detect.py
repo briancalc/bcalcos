@@ -32,12 +32,12 @@ PACKAGE_MAP = {
     "PDF Arranger": "pdfarranger",
     "Inkscape": "inkscape",
     "Darktable": "darktable",
+    "AisleRiot": "aisleriot",
 }
 
 
 # Documentation URLs (these stay as None status)
 DOCS_URLS = {
-    "Devuan Website": "https://www.devuan.org/os/community",
     "AppArmor Userdoc": "https://wiki.debian.org/AppArmor",
     "WireGuard Quick Start": "https://www.wireguard.com/quickstart/",
     "UFW Help Wiki": "https://wiki.debian.org/Uncomplicated%20Firewall%20%28ufw%29",

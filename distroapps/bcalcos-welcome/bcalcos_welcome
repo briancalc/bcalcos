@@ -86,11 +86,11 @@ APPS_CONFIG = {
 		("Task Manager", None),
 	],
 
-	"Process & Documentation": [
+	"Sundry": [
 		("Run Updates", None),
 		("Keyboard Layout", None),
 		("Create New User", None),
-		("Devuan Website", None),
+		("AisleRiot", None),
 		("AppArmor Userdoc", None),
 		("WireGuard Quick Start", None),
 		("UFW Help Wiki", None),
@@ -177,7 +177,7 @@ ICON_NAMES = {
 	"ClamAV": "security-high-symbolic",
 	"WireGuard": "network-vpn-symbolic",
 	"BcalcOS Website": "help-browser-symbolic",
-	"Devuan Website": "help-browser-symbolic",
+	"AisleRiot": "applications-games-symbolic",
 	"AppArmor Userdoc": "security-high-symbolic",
 	"WireGuard Quick Start": "network-server-symbolic",
 	"Task Manager": "utilities-system-monitor-symbolic",
@@ -975,7 +975,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		# ----------------------------------------------------
-		# System + Documentation
+		# System + Sundry
 		# ----------------------------------------------------
 
 		lower_grid = Gtk.Grid()
@@ -988,7 +988,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		documentation_card = self._create_category_card(
-			"Process & Documentation"
+			"Sundry"
 		)
 
 		lower_grid.attach(
