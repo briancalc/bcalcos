@@ -264,7 +264,7 @@ generate_crypttab() {
             "$SWAP_CRYPT_NAME" \
             "PARTUUID=$swap_partuuid" \
             "/dev/urandom" \
-            "swap,cipher=aes-xts-plain64,size=256"
+            "swap,plain,cipher=aes-xts-plain64,size=256"
 
         if (( ${INSTALL_ENCRYPT_HOME:-0} == 1 )); then
             printf '%s %s %s %s\n' \

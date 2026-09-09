@@ -353,19 +353,47 @@ disk_safety_check() {
         fi
     fi
 
-    # Check for device-mapper mappings
+###########################
+    # Check for device-mapper mappings overlaying the target disk.
+    #
+    # BUG FIX: the previous version compared the mapper's immediate
+    # parent (PKNAME) against the whole-disk name. A mapping created
+    # on a PARTITION has the partition not the disk as its parent,
+    # so the check could essentially never fire. List the disk's entire subtree
+    # via lsblk (disk, partitions, and all dm mappings layered on
+    # them) and check every mapper entry against it.
     if [[ -d /dev/mapper ]]; then
         local dm_dev
-        for dm_dev in /dev/mapper/*; do
-            [[ -e "$dm_dev" ]] || continue
-            if lsblk -no PKNAME "$dm_dev" 2>/dev/null | grep -q "^${disk_base}$"; then
-                reason="device-mapper mapping from $dm_dev"
-                break
-            fi
-        done
+        local dm_name
+        local descendants
+
+        descendants="$(lsblk -nr -o NAME -- "$disk" 2>/dev/null)" || descendants=""
+
+        if [[ -n "$descendants" ]]; then
+            for dm_dev in /dev/mapper/*; do
+                [[ -e "$dm_dev" ]] || continue
+                dm_name="${dm_dev##*/}"
+
+                # /dev/mapper/control is a device-control node, not a mapping.
+                [[ "$dm_name" == "control" ]] && continue
+
+                if grep -qx "$dm_name" <<<"$descendants"; then
+                    reason="device-mapper mapping $dm_dev over $disk"
+                    break
+                fi
+            done
+        fi
 
         if [[ -n "$reason" ]]; then
-            error "Refusing to partition disk with device-mapper: $disk ($reason)"
+            error "Refusing to partition disk with an active device-mapper"
+            error "mapping: $disk ($reason)."
+            error ""
+            error "How to fix:"
+            error "  Close the mapping first:  cryptsetup close $dm_name"
+            error "  (or equivalently:         dmsetup remove $dm_name)"
+            error ""
+            error "  Alternatively, simply reboot the live system — mappings"
+            error "  do not survive a reboot — then restart the installer."
             return 1
         fi
     fi
@@ -373,9 +401,6 @@ disk_safety_check() {
     return 0
 }
 
-#####################################
-# Verify disk identity hasn't changed since selection (TOCTOU protection).
-# Compares current disk properties against values saved at selection time.
 #####################################
 # Verify disk identity hasn't changed since selection (TOCTOU protection).
 # Compares current disk properties against values saved at selection time.

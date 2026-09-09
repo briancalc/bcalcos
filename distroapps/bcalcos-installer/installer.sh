@@ -288,6 +288,21 @@ cleanup_on_exit() {
         umount_target 2>/dev/null || true
     fi
 
+    # If a failed run leaves the home LUKS mapper open (e.g. setup_luks_home
+    # succeeded but a later stage aborted), the open mapper holds the home
+    # partition busy and every luksFormat retry in this live session fails
+    # with "cannot exclusively open, device in use". Close here.
+    # umount_target ran first, as required. close_luks_home() is a no-op
+    # when the mapper does not exist (unencrypted install, or it never
+    # got that far). Never? let cleanup itself fail.
+    if [[ -b /dev/mapper/"$HOME_CRYPT_NAME" ]]; then
+        if ! close_luks_home; then
+            warning "Home mapper could not be closed (still busy?)."
+            warning "Reboot the live system before re-running the installer,"
+            warning "or close it manually: cryptsetup close $HOME_CRYPT_NAME"
+        fi
+    fi
+
     return "$exit_code"
 }
 ####################

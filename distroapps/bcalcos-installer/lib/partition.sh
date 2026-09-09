@@ -460,6 +460,19 @@ create_filesystems() {
     # the raw partition in the encrypted case.
     TARGET_HOME_DEVICE=""
 
+    # Clear any stale signature left in this partition's sectors by a
+    # previous install on this disk (sgdisk --zap-all destroys partition-
+    # table metadata but not partition data areas). A recognizable stale
+    # signature — e.g. a leftover LUKS2 header — can invite the live
+    # session's device stack to probe or open the new device node, holding
+    # it and making cryptsetup luksFormat fail with "cannot exclusively
+    # open, device in use".
+    info "Clearing home partition signatures..."
+    if ! wipefs -a "$home"; then
+        error "Failed to clear signatures on home partition: $home"
+        return 1
+    fi
+
     if (( ${INSTALL_ENCRYPT_HOME:-0} == 1 )); then
         if ! setup_luks_home "$home"; then
             error "Failed to set up LUKS encryption for home."
@@ -490,12 +503,25 @@ create_filesystems() {
         return 1
     fi
 
-    # NOTE: The swap partition is intentionally NOT initialized here.
+    # NOTE: The swap partition is intentionally not initialized here.
     # No mkswap is run and no signature is written. On the installed
     # system, cryptdisks opens a plain dm-crypt mapping with a random
     # per-boot key and runs mkswap on the mapper device
     # (/dev/mapper/cryptswap) at every boot. See lib/crypto.sh,
     # generate_crypttab(), and the matching /etc/fstab entry.
+    #
+    # sgdisk --zap-all destroys partition-table metadata but not the
+    # data areas of the partitions themselves. A previous install on
+    # the same disk can therefore leave a stale signature
+    # inside the new swap partition, which triggers a
+    # first-boot confirmation prompt from cryptdisks. Wipe the partition
+    # so it is guaranteed signature-clean.
+
+    info "Clearing swap partition signatures..."
+    if ! wipefs -a "$swap"; then
+        error "Failed to clear signatures on swap partition: $swap"
+        return 1
+    fi
 
     info "Formatting home filesystem..."
     if ! mkfs.ext4 -F -L home "$TARGET_HOME_DEVICE"; then
