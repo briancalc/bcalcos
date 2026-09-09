@@ -33,11 +33,11 @@ General Overview.<br>
 <br>
 **BcalcOS Community**<br>
 [Discourse](https://bcalcos.discourse.group/)<br>
-Primary place for documentation, announcements, discussion, questions, and support.
+Primary place for documentation, announcements, discussion, questions, and support.<br>
 <br>
 **BcalcOS Downloads**<br>
 [SourceForge](https://sourceforge.net/projects/bcalcos-linux/files/)<br>
-Signed ISO and checksum.
+Signed ISO and checksum.<br>
 <br>
 **BcalcOS Repository**<br>
 [GitHub](https://github.com/briancalc/bcalcos)<br>
