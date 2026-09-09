@@ -34,6 +34,16 @@ General Overview.<br>
 **BcalcOS Community**<br>
 [Discourse](https://bcalcos.discourse.group/)<br>
 Primary place for documentation, announcements, discussion, questions, and support.<br>
+Includes short vignettes (~1 to 2 min reads) with useful information.<br>
+Such as:<br>
+BcalcOS Installer: Design Notes and Trade-offs<br>
+BcalcOS Installation Process<br>
+Before You Install BcalcOS<br>
+What Happens to the Disk?<br>
+Encryption Explained<br>
+Why BcalcOS Uses XLibre<br>
+XLibre: Things to Know<br>
+SLiM: The BcalcOS Display Manager<br>
 <br>
 **BcalcOS Downloads**<br>
 [SourceForge](https://sourceforge.net/projects/bcalcos-linux/files/)<br>
