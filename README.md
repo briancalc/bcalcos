@@ -1,22 +1,19 @@
 # Readme Contents
 
-1. [A New Linux Distribution?](#1-a-new-linux-distribution)
+1. [A New Linux Distribution](#1-a-new-linux-distribution)
 2. [Who is this for?](#2-who-is-this-for)
-3. [Features](#3-features)
-4. [Installation Guide](#4-installation-guide)
-5. [LLM Use](#5-llm-use)
-6. [Getting Help](#6-getting-help)
-7. [License](#6-license)
+3. [Learn More](#3-learn-more)
+4. [License](#4-license)
 
 ---
 
-## 1. A New Linux Distribution?
+## 1. A New Linux Distribution
 
 Because there are so few of them. /s
 
-See https://bcalcos.org/whypage for further discussion.
+BcalcOS is built on [Devuan](https://www.devuan.org/), with a focus on simplicity and a traditional Unix/Linux system architecture.
 
-**ALPHA RELEASE**
+It combines Devuan with a custom installer, configuration, applications, and desktop experience.
 
 ---
 
@@ -24,55 +21,39 @@ See https://bcalcos.org/whypage for further discussion.
 
 BcalcOS Linux is for, well, me.
 
-And anyone else interested in a stable Linux distribution that is systemd free, XLibre by default, and neither a minimalist nor bloated foundation upon which to customize your system your way. 
+And anyone else interested in a stable Linux distribution that uses SysVinit, XLibre by default, and provides a balanced foundation for customizing a system your way.
 
 ---
 
-## 3. Features
+## 3. Learn More
 
-- Devuan - operating system foundation
-- sysvinit - system initialization
-- XLibre - display server
-- SLiM - display manager
-- Xfce - desktop environment
-- Privacy - no personal data collected, transmitted, or, frankly, wanted
+**Website**
+[BcalcOS.org](https://bcalcos.org/)
+General Overview.
 
-See https://bcalcos.org/techpage for additional information.
+**BcalcOS Community**
+[Discourse](https://bcalcos.discourse.group/)
+Primary place for documentation, announcements, discussion, questions, and support.
 
----
+**BcalcOS Downloads**
+[SourceForge](https://sourceforge.net/projects/bcalcos-linux/files/)
+Signed ISO and checksum.
 
-## 4. Installation 
-
-**For installation on secondary machine only.**
-
-BcalcOS utilizes a custom, terminal based installer.
-
-See https://bcalcos.org/installpage for installation instructions.
-
-See https://sourceforge.net/projects/bcalcos-linux/files/ for direct link to ISO.
+**BcalcOS Repository**
+[GitHub](https://github.com/briancalc/bcalcos)
+Contains the source, configuration, packaging, and other components used to build BcalcOS.
 
 ---
 
-## 5. LLM Use
-
-AI (or LLMs I guess) were used in creating BcalcOS.  I have the same qualms regarding AI as do most folks, e.g. its inherent biases, potential to advance centralized control, and job displacement.  For me, LLMs are just tools, sometimes very helpful while other times, well, a waste of time.  I've only used the free versions so perhaps that colors my opinion.  Sharing this so users can decide whether that matters before trying the distro.
-
-----
-
-## 6. Getting Help
-
-- Bug reports: https://github.com/briancalc/bcalcos/issues
-- Community forum: https://bcalcos.discourse.group/
-
-----
-## 7. License
+## 4. License
 
 BcalcOS Linux is distributed WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-BcalcOS Linux is released under the GNU General Public License (GPL) Version 3 which can be referenced at https://opensource.org/license/GPL-3.0. Some included packages and applications may have been released under different licenses.
+BcalcOS Linux is released under the GNU General Public License, Version 3. 
 
-BcalcOS is free to use, modify, or distribute.
+Some included packages and applications are distributed under different licenses.
+
+BcalcOS is free to use, modify, and distribute under the terms of its applicable licenses.
 
 ---
-
 
