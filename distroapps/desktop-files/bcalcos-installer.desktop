@@ -1,4 +1,5 @@
 [Desktop Entry]
+Version=1.3
 Name=Install BcalcOS
 Comment=Install BcalcOS Linux to your hard drive
 Exec=xfce4-terminal -e "sudo /usr/bin/bcalcos-install --install"

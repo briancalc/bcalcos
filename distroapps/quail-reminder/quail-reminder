@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 quail-reminder
-v1.0
+v1.3
 super-b key to activate
 Simple desktop reminder utility for BcalcOS.
 """

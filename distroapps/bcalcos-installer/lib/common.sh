@@ -1,5 +1,6 @@
 #!/bin/bash
 #COMMON.SH
+#v1.3
 
 INSTALLER_NAME="BCALCOS Linux Installer"
 INSTALLER_VERSION="0.1.0"

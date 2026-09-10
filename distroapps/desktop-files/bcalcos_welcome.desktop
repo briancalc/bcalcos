@@ -1,5 +1,5 @@
 [Desktop Entry]
-Version=1.0
+Version=1.3
 Type=Application
 Name=BcalcOS Welcome
 Exec=/usr/bin/bcalcos_welcome

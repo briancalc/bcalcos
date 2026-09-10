@@ -1,7 +1,7 @@
 #!/bin/bash
 # INSTALLER.SH
 # BcalcOS Linux Installer
-# v1.0
+# v1.3
 # 
 # Installation orchestration
 # Associated files: 

@@ -1,5 +1,6 @@
 #!/bin/bash
 #CRYPTO.SH
+#v1.3
 
 # BCALCOS disk encryption: LUKS2 home (opt-in), /etc/crypttab
 # generation. Swap encryption is boot-time-only via crypttab and

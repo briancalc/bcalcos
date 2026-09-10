@@ -1,5 +1,6 @@
 #!/bin/bash
 #DISKS.SH
+#v1.3
 
 MIN_DISK_SIZE_GIB=80
 

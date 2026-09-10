@@ -1,5 +1,6 @@
 #!/bin/bash
 #PREFLIGHT.SH
+#v1.3
 
 # Read-only preflight checks.
 #

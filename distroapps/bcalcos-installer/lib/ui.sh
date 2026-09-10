@@ -1,5 +1,6 @@
 #!/bin/bash
 #UI.SH
+#v1.3
 
 if [[ -t 1 ]]; then
     C_RESET=$'\033[0m'

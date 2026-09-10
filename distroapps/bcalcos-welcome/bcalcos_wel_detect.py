@@ -1,6 +1,6 @@
 #bcalcos_wel_detect.py
 #not standalone - see bcalcos_welcome
-#v1.0
+#v1.3
 
 import subprocess
 

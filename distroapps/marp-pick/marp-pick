@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #Marp-pick.py
-#v1.0
+#v1.3
 
 import gi
 import os

@@ -1,5 +1,6 @@
 #!/bin/bash
 #PARTITION.SH
+#v1.3
 
 # Deterministic V1 partition calculator.
 #

@@ -1,4 +1,5 @@
 # Readme Contents
+# v1.3
 
 1. [Introduction](#1-introduction)
 2. [Font Hide](#2-font-hide)
