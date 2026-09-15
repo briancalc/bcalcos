@@ -1,0 +1,876 @@
+#!/usr/bin/env python3
+# quail-converter
+# Quail Converter v1.3
+#
+# BcalcOS everyday unit conversion utility.
+
+import tkinter as tk
+import tkinter.font as tkfont
+from decimal import Decimal, InvalidOperation
+
+
+# ============================================================
+# Quail / BcalcOS color palette
+# ============================================================
+
+COLOR_PRIMARY = "#BA7800"
+COLOR_PRIMARY_DARK = "#8A5A00"
+COLOR_PRIMARY_LIGHT = "#D99A28"
+COLOR_PRIMARY_LIGHT_LIGHT = "#EBC978"
+
+COLOR_BG = "#F5F6F8"
+COLOR_SURFACE = "#FFFFFF"
+COLOR_SURFACE_ALT = "#FBF9F5"
+
+COLOR_TEXT = "#2C3E50"
+COLOR_TEXT_MUTED = "#68717A"
+COLOR_TEXT_LIGHT = "#9299A0"
+
+COLOR_BORDER = "#E2E5E8"
+COLOR_BORDER_GOLD = "#E5C88F"
+
+COLOR_WHITE = "#FFFFFF"
+
+FONT_PRIMARY = "Inter"
+FONT_HEADING = "Poppins"
+FONT_MONO = "monospace"
+
+
+# ============================================================
+# Window
+# ============================================================
+
+WINDOW_WIDTH = 560
+WINDOW_HEIGHT = 580
+WINDOW_MIN_WIDTH = 480
+WINDOW_MIN_HEIGHT = 480
+
+
+# ============================================================
+# Unit definitions
+# Factors convert each unit to the category's base unit.
+# ============================================================
+
+UNITS = {
+    "Length": {
+        "Millimeters": Decimal("0.001"),
+        "Centimeters": Decimal("0.01"),
+        "Meters": Decimal("1"),
+        "Kilometers": Decimal("1000"),
+        "Inches": Decimal("0.0254"),
+        "Feet": Decimal("0.3048"),
+        "Yards": Decimal("0.9144"),
+        "Miles": Decimal("1609.344"),
+    },
+
+    "Weight": {
+        "Grams": Decimal("1"),
+        "Kilograms": Decimal("1000"),
+        "Ounces": Decimal("28.349523125"),
+        "Pounds": Decimal("453.59237"),
+    },
+
+    "Temperature": {
+        "Fahrenheit": None,
+        "Celsius": None,
+        "Kelvin": None,
+    },
+
+    "Volume": {
+        "Milliliters": Decimal("1"),
+        "Liters": Decimal("1000"),
+        "Teaspoons": Decimal("4.92892159375"),
+        "Tablespoons": Decimal("14.78676478125"),
+        "Cups": Decimal("236.5882365"),
+        "Pints": Decimal("473.176473"),
+        "Quarts": Decimal("946.352946"),
+        "Gallons": Decimal("3785.411784"),
+    },
+
+    "Time": {
+        "Seconds": Decimal("1"),
+        "Minutes": Decimal("60"),
+        "Hours": Decimal("3600"),
+        "Days": Decimal("86400"),
+    },
+}
+
+
+# ============================================================
+# Temperature conversion
+# ============================================================
+
+def convert_temperature(value, from_unit, to_unit):
+    """Convert temperature through Celsius."""
+
+    if from_unit == "Fahrenheit":
+        celsius = (value - Decimal("32")) * Decimal("5") / Decimal("9")
+
+    elif from_unit == "Celsius":
+        celsius = value
+
+    elif from_unit == "Kelvin":
+        celsius = value - Decimal("273.15")
+
+    else:
+        return None
+
+    if to_unit == "Celsius":
+        return celsius
+
+    if to_unit == "Fahrenheit":
+        return (celsius * Decimal("9") / Decimal("5")) + Decimal("32")
+
+    if to_unit == "Kelvin":
+        return celsius + Decimal("273.15")
+
+    return None
+
+
+# ============================================================
+# General conversion
+# ============================================================
+
+def convert_value(value, category, from_unit, to_unit):
+    """Convert a value between units."""
+
+    if from_unit == to_unit:
+        return value
+
+    if category == "Temperature":
+        return convert_temperature(
+            value,
+            from_unit,
+            to_unit
+        )
+
+    units = UNITS[category]
+
+    base_value = value * units[from_unit]
+    result = base_value / units[to_unit]
+
+    return result
+
+
+# ============================================================
+# Result formatting
+# ============================================================
+
+def format_result(value):
+    """Format result to a maximum of six decimal places."""
+
+    if value == 0:
+        return "0"
+
+    rounded = value.quantize(
+        Decimal("0.000001")
+    )
+
+    text = format(
+        rounded,
+        "f"
+    )
+
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+
+    return text
+
+
+# ============================================================
+# Quail Converter GUI
+# ============================================================
+
+class QuailConverter:
+
+    def __init__(self, root):
+
+        self.root = root
+
+        # --------------------------------------------------------
+        # Window
+        # --------------------------------------------------------
+
+        self.root.title("")
+
+        self.root.geometry(
+            f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}"
+        )
+
+        self.root.minsize(
+            WINDOW_MIN_WIDTH,
+            WINDOW_MIN_HEIGHT
+        )
+
+        self.root.configure(
+            bg=COLOR_BG
+        )
+
+        self.root.columnconfigure(
+            0,
+            weight=1
+        )
+
+        self.root.rowconfigure(
+            0,
+            weight=1
+        )
+
+        # --------------------------------------------------------
+        # Fonts
+        # --------------------------------------------------------
+
+        self.title_font = tkfont.Font(
+            family=FONT_HEADING,
+            size=20,
+            weight="bold"
+        )
+
+        self.subtitle_font = tkfont.Font(
+            family=FONT_PRIMARY,
+            size=11
+        )
+
+        self.label_font = tkfont.Font(
+            family=FONT_PRIMARY,
+            size=12,
+            weight="bold"
+        )
+
+        self.entry_font = tkfont.Font(
+            family=FONT_MONO,
+            size=14
+        )
+
+        self.result_font = tkfont.Font(
+            family=FONT_MONO,
+            size=16,
+            weight="bold"
+        )
+
+        self.button_font = tkfont.Font(
+            family=FONT_PRIMARY,
+            size=11,
+            weight="bold"
+        )
+
+        # --------------------------------------------------------
+        # Variables
+        # --------------------------------------------------------
+
+        self.category_var = tk.StringVar(
+            value="Length"
+        )
+
+        self.from_var = tk.StringVar()
+        self.to_var = tk.StringVar()
+
+        self.value_var = tk.StringVar()
+
+        self.result_var = tk.StringVar(
+            value=""
+        )
+
+        # --------------------------------------------------------
+        # Main frame
+        # --------------------------------------------------------
+
+        self.main = tk.Frame(
+            self.root,
+            bg=COLOR_BG
+        )
+
+        self.main.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+            padx=28,
+            pady=24
+        )
+
+        self.main.columnconfigure(
+            0,
+            weight=1
+        )
+
+        # --------------------------------------------------------
+        # Title
+        # --------------------------------------------------------
+
+        self.title_label = tk.Label(
+            self.main,
+            text="Quail Converter",
+            font=self.title_font,
+            fg=COLOR_PRIMARY,
+            bg=COLOR_BG
+        )
+
+        self.title_label.grid(
+            row=0,
+            column=0,
+            sticky="w"
+        )
+
+        # --------------------------------------------------------
+        # Subtitle
+        # --------------------------------------------------------
+
+        self.subtitle_label = tk.Label(
+            self.main,
+            text="Convert everyday units",
+            font=self.subtitle_font,
+            fg=COLOR_TEXT_MUTED,
+            bg=COLOR_BG
+        )
+
+        self.subtitle_label.grid(
+            row=1,
+            column=0,
+            sticky="w",
+            pady=(2, 18)
+        )
+
+        # --------------------------------------------------------
+        # Category
+        # --------------------------------------------------------
+
+        category_label = tk.Label(
+            self.main,
+            text="Category",
+            font=self.label_font,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG
+        )
+
+        category_label.grid(
+            row=2,
+            column=0,
+            sticky="w",
+            pady=(0, 6)
+        )
+
+        self.category_combo = self.create_combo(
+            self.main,
+            self.category_var,
+            list(UNITS.keys()),
+            self.category_changed
+        )
+
+        self.category_combo.grid(
+            row=3,
+            column=0,
+            sticky="ew",
+            pady=(0, 14)
+        )
+
+        # --------------------------------------------------------
+        # From / To frame
+        # --------------------------------------------------------
+
+        units_frame = tk.Frame(
+            self.main,
+            bg=COLOR_BG
+        )
+
+        units_frame.grid(
+            row=4,
+            column=0,
+            sticky="ew",
+            pady=(0, 14)
+        )
+
+        units_frame.columnconfigure(
+            0,
+            weight=1
+        )
+
+        units_frame.columnconfigure(
+            1,
+            weight=0
+        )
+
+        units_frame.columnconfigure(
+            2,
+            weight=1
+        )
+
+        # --------------------------------------------------------
+        # From
+        # --------------------------------------------------------
+
+        from_label = tk.Label(
+            units_frame,
+            text="From",
+            font=self.label_font,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG
+        )
+
+        from_label.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            pady=(0, 6)
+        )
+
+        self.from_combo = self.create_combo(
+            units_frame,
+            self.from_var,
+            [],
+            self.convert
+        )
+
+        self.from_combo.grid(
+            row=1,
+            column=0,
+            sticky="ew"
+        )
+
+        # --------------------------------------------------------
+        # Swap
+        # --------------------------------------------------------
+
+        self.swap_button = tk.Button(
+            units_frame,
+            text="⇄",
+            command=self.swap_units,
+            font=(
+                FONT_PRIMARY,
+                15,
+                "bold"
+            ),
+            fg=COLOR_PRIMARY_DARK,
+            bg=COLOR_SURFACE,
+            activeforeground=COLOR_PRIMARY_DARK,
+            activebackground=COLOR_PRIMARY_LIGHT_LIGHT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER_GOLD,
+            highlightcolor=COLOR_BORDER_GOLD,
+            cursor="hand2",
+            width=3
+        )
+
+        self.swap_button.grid(
+            row=1,
+            column=1,
+            padx=12
+        )
+
+        # --------------------------------------------------------
+        # To
+        # --------------------------------------------------------
+
+        to_label = tk.Label(
+            units_frame,
+            text="To",
+            font=self.label_font,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG
+        )
+
+        to_label.grid(
+            row=0,
+            column=2,
+            sticky="w",
+            pady=(0, 6)
+        )
+
+        self.to_combo = self.create_combo(
+            units_frame,
+            self.to_var,
+            [],
+            self.convert
+        )
+
+        self.to_combo.grid(
+            row=1,
+            column=2,
+            sticky="ew"
+        )
+
+        # --------------------------------------------------------
+        # Enter Value
+        # --------------------------------------------------------
+
+        value_label = tk.Label(
+            self.main,
+            text="Enter Value",
+            font=self.label_font,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG
+        )
+
+        value_label.grid(
+            row=5,
+            column=0,
+            sticky="w",
+            pady=(0, 6)
+        )
+
+        self.value_entry = tk.Entry(
+            self.main,
+            textvariable=self.value_var,
+            font=self.entry_font,
+            bg=COLOR_SURFACE,
+            fg=COLOR_TEXT,
+            insertbackground=COLOR_PRIMARY,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER,
+            highlightcolor=COLOR_PRIMARY
+        )
+
+        self.value_entry.grid(
+            row=6,
+            column=0,
+            sticky="ew",
+            ipady=8,
+            pady=(0, 14)
+        )
+
+        self.value_entry.bind(
+            "<KeyRelease>",
+            self.value_changed
+        )
+
+        self.value_entry.bind(
+            "<Return>",
+            self.convert
+        )
+
+        # --------------------------------------------------------
+        # Result
+        # --------------------------------------------------------
+
+        result_label = tk.Label(
+            self.main,
+            text="Result",
+            font=self.label_font,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG
+        )
+
+        result_label.grid(
+            row=7,
+            column=0,
+            sticky="w",
+            pady=(0, 6)
+        )
+
+        self.result_frame = tk.Frame(
+            self.main,
+            bg=COLOR_BG,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER
+        )
+
+        self.result_frame.grid(
+            row=8,
+            column=0,
+            sticky="ew",
+            pady=(0, 18)
+        )
+
+        self.result_frame.columnconfigure(
+            0,
+            weight=1
+        )
+
+        self.result_label = tk.Label(
+            self.result_frame,
+            textvariable=self.result_var,
+            font=self.result_font,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG,
+            anchor="e",
+            padx=14
+        )
+
+        self.result_label.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            ipady=9
+        )
+
+        # --------------------------------------------------------
+        # Bottom buttons
+        # --------------------------------------------------------
+
+        button_frame = tk.Frame(
+            self.main,
+            bg=COLOR_BG
+        )
+
+        button_frame.grid(
+            row=9,
+            column=0,
+            sticky="e"
+        )
+
+        self.clear_button = tk.Button(
+            button_frame,
+            text="Clear",
+            command=self.clear,
+            font=self.button_font,
+            fg=COLOR_TEXT_MUTED,
+            bg=COLOR_SURFACE_ALT,
+            activeforeground=COLOR_TEXT_MUTED,
+            activebackground=COLOR_PRIMARY_LIGHT_LIGHT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER_GOLD,
+            highlightcolor=COLOR_BORDER_GOLD,
+            cursor="hand2",
+            padx=18,
+            pady=7
+        )
+
+        self.clear_button.grid(
+            row=0,
+            column=0,
+            padx=(0, 8)
+        )
+
+        self.close_button = tk.Button(
+            button_frame,
+            text="Close",
+            command=self.root.destroy,
+            font=self.button_font,
+            fg=COLOR_WHITE,
+            bg=COLOR_PRIMARY,
+            activeforeground=COLOR_WHITE,
+            activebackground=COLOR_PRIMARY_DARK,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_PRIMARY_DARK,
+            highlightcolor=COLOR_PRIMARY_DARK,
+            cursor="hand2",
+            padx=18,
+            pady=7
+        )
+
+        self.close_button.grid(
+            row=0,
+            column=1
+        )
+
+        # --------------------------------------------------------
+        # Initialize units
+        # --------------------------------------------------------
+
+        self.update_units()
+
+        self.value_entry.focus_set()
+
+    # ============================================================
+    # Combobox
+    # ============================================================
+
+    def create_combo(
+        self,
+        parent,
+        variable,
+        values,
+        callback
+    ):
+        """Create a Quail-styled combobox."""
+
+        from tkinter import ttk
+
+        style = ttk.Style()
+
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+
+        style.configure(
+            "Quail.TCombobox",
+            font=(
+                FONT_PRIMARY,
+                11
+            ),
+            foreground=COLOR_TEXT,
+            fieldbackground=COLOR_SURFACE,
+            background=COLOR_SURFACE,
+            bordercolor=COLOR_BORDER,
+            lightcolor=COLOR_BORDER,
+            darkcolor=COLOR_BORDER,
+            arrowsize=22,
+            padding=(8, 7)
+        )
+
+        style.map(
+            "Quail.TCombobox",
+            fieldbackground=[
+                ("readonly", COLOR_SURFACE)
+            ],
+            background=[
+                ("active", COLOR_SURFACE)
+            ],
+            bordercolor=[
+                ("focus", COLOR_PRIMARY)
+            ]
+        )
+
+        combo = ttk.Combobox(
+            parent,
+            textvariable=variable,
+            values=values,
+            state="readonly",
+            style="Quail.TCombobox"
+        )
+
+        combo.bind(
+            "<<ComboboxSelected>>",
+            callback
+        )
+
+        return combo
+
+    # ============================================================
+    # Category changed
+    # ============================================================
+
+    def category_changed(self, event=None):
+
+        self.update_units()
+
+        self.convert()
+
+    # ============================================================
+    # Update units
+    # ============================================================
+
+    def update_units(self):
+
+        category = self.category_var.get()
+
+        units = list(
+            UNITS[category].keys()
+        )
+
+        self.from_combo["values"] = units
+        self.to_combo["values"] = units
+
+        if units:
+
+            self.from_var.set(
+                units[0]
+            )
+
+            if len(units) > 1:
+                self.to_var.set(
+                    units[1]
+                )
+            else:
+                self.to_var.set(
+                    units[0]
+                )
+
+    # ============================================================
+    # Value changed
+    # ============================================================
+
+    def value_changed(self, event=None):
+
+        self.convert()
+
+    # ============================================================
+    # Convert
+    # ============================================================
+
+    def convert(self, event=None):
+
+        text = self.value_var.get().strip()
+
+        if not text:
+            self.result_var.set("")
+            return
+
+        try:
+            value = Decimal(text)
+
+        except InvalidOperation:
+            self.result_var.set(
+                "Invalid value"
+            )
+            return
+
+        category = self.category_var.get()
+        from_unit = self.from_var.get()
+        to_unit = self.to_var.get()
+
+        if not from_unit or not to_unit:
+            return
+
+        try:
+            result = convert_value(
+                value,
+                category,
+                from_unit,
+                to_unit
+            )
+
+        except (ArithmeticError, KeyError):
+            self.result_var.set(
+                "Unable to convert"
+            )
+            return
+
+        self.result_var.set(
+            format_result(result)
+        )
+
+    # ============================================================
+    # Swap units
+    # ============================================================
+
+    def swap_units(self):
+
+        from_unit = self.from_var.get()
+        to_unit = self.to_var.get()
+
+        self.from_var.set(
+            to_unit
+        )
+
+        self.to_var.set(
+            from_unit
+        )
+
+        self.convert()
+
+    # ============================================================
+    # Clear
+    # ============================================================
+
+    def clear(self):
+
+        self.value_var.set("")
+        self.result_var.set("")
+
+        self.value_entry.focus_set()
+
+
+# ============================================================
+# Main
+# ============================================================
+
+def main():
+
+    root = tk.Tk()
+
+    QuailConverter(root)
+
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

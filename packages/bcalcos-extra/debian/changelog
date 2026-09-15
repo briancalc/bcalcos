@@ -1,0 +1,7 @@
+bcalcos-extra (1.3-1) bobwhite; urgency=medium
+
+  * added Quail System system information app
+  * added Quail Converter unit conversion app
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Tue, 15 Sep 2026 00:00:00 +0000
+

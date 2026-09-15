@@ -1,19 +1,11 @@
 #!/usr/bin/env python3
 """
 BcalcOS Welcome Center
-v1.3
+v1.3.1
 
-Features:
-- Branded BcalcOS splash screen
-- Native 449x641 quail artwork
-- Application installation launcher
-- Application removal with autoremove cleanup
-- System actions
-- Documentation shortcuts
-- User creation dialog
-- GTK/CSS-based visual design
-- No shell=True for privileged operations
-- Uses pkexec for graphical privilege escalation
+New Feature(s):
+- hamburger help menu
+- user can select light (default) or dark mode
 """
 
 import os
@@ -117,34 +109,92 @@ KEYBOARD_LAYOUTS = {
 }
 
 # ============================================================
-# BcalcOS COLOR PALETTE
+# BcalcOS COLOR PALETTES
 # ============================================================
 
-COLOR_PRIMARY = "#BA7800"
-COLOR_PRIMARY_DARK = "#8A5A00"
-COLOR_PRIMARY_LIGHT = "#D99A28"
+LIGHT_PALETTE = {
+	# Surfaces
+	"bg":             "#F5F6F8",
+	"surface":        "#FFFFFF",
+	"surface_alt":    "#FBF9F5",
 
-COLOR_BG = "#F5F6F8"
-COLOR_SURFACE = "#FFFFFF"
-COLOR_SURFACE_ALT = "#FBF9F5"
+	# Text
+	"text":           "#2C3E50",
+	"text_muted":     "#68717A",
+	"text_light":     "#9299A0",
 
-COLOR_TEXT = "#2C3E50"
-COLOR_TEXT_MUTED = "#68717A"
-COLOR_TEXT_LIGHT = "#9299A0"
+	# Brand gold
+	"primary":        "#BA7800",
+	"primary_dark":   "#8A5A00",
+	"primary_light":  "#D99A28",
 
-COLOR_BORDER = "#E2E5E8"
-COLOR_BORDER_GOLD = "#E5C88F"
+	# Borders
+	"border":         "#E2E5E8",
+	"border_gold":    "#E5C88F",
 
-COLOR_INSTALLED = "#2E8B57"
-COLOR_INSTALLED_BG = "#EEF8F2"
+	# Status
+	"installed":      "#2E8B57",
+	"installed_bg":   "#EEF8F2",
+	"remove":         "#2C3E50",
 
-COLOR_REMOVE = "#2C3E50"
+	# States
+	"disabled":            "#F0F1F2",
+	"disabled_border":     "#E5E7E9",
+	"button_hover":        "#FFFDF8",
+	"button_active":       "#F7EEDC",
 
-COLOR_DISABLED = "#F0F1F2"
+	# Icon wells
+	"icon_box_bg":     "#FBF5E9",
+	"icon_box_border": "#EBD7AD",
+}
 
-COLOR_WHITE = "#FFFFFF"
+DARK_PALETTE = {
+	# Surfaces
+	"bg":             "#221C11",   # dark bronze-black
+	"surface":        "#2B241A",   # espresso brown
+	"surface_alt":    "#352C1E",   # leather brown
 
+	# Text
+	"text":           "#F3EEE4",   # eggshell white
+	"text_muted":     "#C2B8A6",   # warm taupe gray
+	"text_light":     "#8F8574",   # weathered khaki
 
+	# Brand gold (roles reshifted for dark backgrounds)
+	"primary":        "#D99A28",   # goldenrod amber
+	"primary_dark":   "#8A5A00",   # unchanged bronze
+	"primary_light":  "#F0BC5E",   # honey amber
+
+	# Borders
+	"border":         "#3E3526",   # dark umber
+	"border_gold":    "#C7A25C",   # antique brass
+
+	# Status
+	"installed":      "#5AB07E",   # luminous jade
+	"installed_bg":   "#1F3329",   # deep forest
+	"remove":         "#F3EEE4",   # follows text
+
+	# States
+	"disabled":            "#2E2A23",
+	"disabled_border":     "#262117",
+	"button_hover":        "#3A3021",
+	"button_active":       "#4A3D28",
+
+	# Icon wells
+	"icon_box_bg":     "#3A2F1C",
+	"icon_box_border": "#554428",
+}
+
+SPLASH_PALETTE = {
+	"splash_bg":       "#8A5A00",
+	"splash_accent":   "#BA7800",
+	"splash_border":   "#D99A28",
+	"splash_white":    "#FFFFFF",
+	"splash_sub":      "#F4DFC0",
+	"splash_tagline":  "#F8EBD5",
+}
+
+LIGHT_PALETTE.update(SPLASH_PALETTE)
+DARK_PALETTE.update(SPLASH_PALETTE)
 # ============================================================
 # ICONS
 # ============================================================
@@ -187,68 +237,68 @@ ICON_NAMES = {
 
 
 # ============================================================
-# CSS
+# SHARED CSS TEMPLATE
 # ============================================================
 
-MAIN_CSS = f"""
+CSS_TEMPLATE = """
 window {{
-	background-color: {COLOR_BG};
-	color: {COLOR_TEXT};
+	background-color: {bg};
+	color: {text};
 }}
 
 .applications-title {{
-	color: {COLOR_PRIMARY_DARK};
+	color: {primary_dark};
 	font-family: Poppins, sans-serif;
 	font-size: 38px;
 	font-weight: 700;
 }}
 
 .applications-subtitle {{
-	color: {COLOR_TEXT_MUTED};
+	color: {text_muted};
 	font-family: Inter, sans-serif;
 	font-size: 18px;
 }}
 
 .header-panel {{
-	background-color: {COLOR_SURFACE};
-	border: 1px solid {COLOR_BORDER};
+	background-color: {surface};
+	border: 1px solid {border};
 	border-radius: 16px;
 	padding: 20px;
 }}
 
 .header-accent {{
-	background-color: {COLOR_PRIMARY};
+	background-color: {primary};
 	min-width: 5px;
 	border-radius: 3px;
 }}
 
 .brand-name {{
-	color: {COLOR_TEXT};
+	color: {text};
 	font-family: Poppins, sans-serif;
 	font-size: 40px;
 	font-weight: 700;
 }}
 
 .brand-subtitle {{
-	color: {COLOR_TEXT_MUTED};
+	color: {text_muted};
 	font-family: Inter, sans-serif;
 	font-size: 16px;
 }}
 
 .category-card {{
-	background-color: {COLOR_SURFACE};
-	border: 1px solid {COLOR_BORDER};
+	background-color: {surface};
+	border: 1px solid {border};
 	border-radius: 16px;
 	padding: 4px;
 }}
 
 .category-card:hover {{
-	border-color: {COLOR_BORDER_GOLD};
+	border-color: {border_gold};
 }}
 
 .category-header {{
-	background-color: {COLOR_SURFACE_ALT};
-	color: {COLOR_TEXT};
+	background-color: {surface_alt};
+	color: {text};
 	font-family: Poppins, sans-serif;
 	font-size: 30px;
 	font-weight: 700;
@@ -257,86 +307,93 @@ window {{
 }}
 
 .category-header-accent {{
-	background-color: {COLOR_PRIMARY};
+	background-color: {primary};
 	min-height: 4px;
 	border-radius: 2px;
 }}
 
 .app-button {{
-	background-color: {COLOR_SURFACE};
-	border: 1px solid {COLOR_BORDER};
+	background-color: {surface};
+	border: 1px solid {border};
 	border-radius: 12px;
 	padding: 13px;
 	min-height: 72px;
 }}
 
 .app-button:hover {{
-	background-color: #FFFDF8;
-	border-color: {COLOR_PRIMARY_LIGHT};
+	background-color: {button_hover};
+	border-color: {primary_light};
 }}
 
 .app-button:active {{
-	background-color: #F7EEDC;
+	background-color: {button_active};
 }}
 
 .app-button:disabled {{
-	background-color: {COLOR_DISABLED};
-	border-color: #E5E7E9;
+	background-color: {disabled};
+	border-color: {disabled_border};
 }}
 
 .app-icon-box {{
-	background-color: #FBF5E9;
-	border: 1px solid #EBD7AD;
+	background-color: {icon_box_bg};
+	border: 1px solid {icon_box_border};
 	border-radius: 10px;
 	min-width: 48px;
 	min-height: 48px;
 }}
 
 .app-icon {{
-	color: {COLOR_PRIMARY_DARK};
+	color: {primary_dark};
 }}
 
 .app-name {{
-	color: {COLOR_TEXT};
+	color: {text};
 	font-family: Inter, sans-serif;
 	font-size: 20px;
 	font-weight: 600;
 }}
 
 .app-description {{
-	color: {COLOR_TEXT_MUTED};
+	color: {text_muted};
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 }}
 
 .status-installed {{
-	color: {COLOR_INSTALLED};
+	color: {installed};
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+	font-weight: 600;
+}}
+
+.status-installed-remove {{
+	color: {installed};
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 	font-weight: 600;
 }}
 
 .status-click {{
-	color: {COLOR_PRIMARY};
+	color: {primary};
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 	font-weight: 600;
 }}
 
 .status-action {{
-	color: {COLOR_TEXT_MUTED};
+	color: {text_muted};
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 }}
 
 .status-placeholder {{
-	color: {COLOR_TEXT_LIGHT};
+	color: {text_light};
 	font-family: Inter, sans-serif;
 	font-size: 14px;
 }}
 
 .footer {{
-	color: {COLOR_TEXT_LIGHT};
+	color: {text_light};
 	font-family: Inter, sans-serif;
 	font-size: 18px;
 }}
@@ -345,39 +402,41 @@ window {{
 	background-color: transparent;
 }}
 
+/* ---- Splash: colors are locked identical in both palettes ---- */
+
 .splash-window {{
-	background-color: {COLOR_PRIMARY_DARK};
-	border: 2px solid {COLOR_PRIMARY_LIGHT};
+	background-color: {splash_bg};
+	border: 2px solid {splash_border};
 	border-radius: 22px;
 }}
 
 .splash-accent {{
-	background-color: {COLOR_PRIMARY};
+	background-color: {splash_accent};
 	border-radius: 100px;
 }}
 
 .splash-welcome {{
-	color: {COLOR_WHITE};
+	color: {splash_white};
 	font-family: Poppins, sans-serif;
 	font-size: 42px;
 	font-weight: 600;
 }}
 
 .splash-title {{
-	color: {COLOR_WHITE};
+	color: {splash_white};
 	font-family: Poppins, sans-serif;
 	font-size: 68px;
 	font-weight: 700;
 }}
 
 .splash-subtitle {{
-	color: #F4DFC0;
+	color: {splash_sub};
 	font-family: Inter, sans-serif;
 	font-size: 21px;
 }}
 
 .splash-tagline {{
-	color: #F8EBD5;
+	color: {splash_tagline};
 	font-family: Inter, sans-serif;
 	font-size: 17px;
 }}
@@ -392,9 +451,11 @@ window {{
 }}
 
 .progress-bar progress {{
-	background-color: {COLOR_PRIMARY_LIGHT};
+	background-color: {splash_border};
 	border-radius: 4px;
 }}
+
+/* ---- Dialogs ---- */
 
 .dialog-title {{
 	font-family: Poppins, sans-serif;
@@ -413,16 +474,29 @@ window {{
 }}
 """
 
+MAIN_CSS = CSS_TEMPLATE.format(**LIGHT_PALETTE)
+DARK_CSS = CSS_TEMPLATE.format(**DARK_PALETTE)
 
 # ============================================================
 # CSS INSTALLATION
 # ============================================================
 
-def install_css():
+_current_css_provider = None
+
+
+def install_css(css):
+	global _current_css_provider
+
 	provider = Gtk.CssProvider()
-	provider.load_from_data(MAIN_CSS.encode("utf-8"))
+	provider.load_from_data(css.encode("utf-8"))
 
 	screen = Gdk.Screen.get_default()
+
+	if _current_css_provider is not None:
+		Gtk.StyleContext.remove_provider_for_screen(
+			screen,
+			_current_css_provider,
+		)
 
 	Gtk.StyleContext.add_provider_for_screen(
 		screen,
@@ -430,7 +504,7 @@ def install_css():
 		Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
 	)
 
-
+	_current_css_provider = provider
 # ============================================================
 # SPLASH SCREEN
 # ============================================================
@@ -1018,24 +1092,186 @@ class WelcomeApp(Gtk.Window):
 		# Footer
 		# ----------------------------------------------------
 
+		footer_box = Gtk.Box(
+		    orientation=Gtk.Orientation.HORIZONTAL,
+		    spacing=8,
+		)
+
 		footer = Gtk.Label(
-			label="Administrative privileges may be required for installation and system changes."
+		    label="Administrative privileges may be required for installation and system changes."
 		)
 
 		footer.set_halign(
-			Gtk.Align.CENTER
+		    Gtk.Align.START
 		)
 
 		footer.get_style_context().add_class(
-			"footer"
+		    "footer"
+		)
+
+		footer_box.pack_start(
+		    footer,
+		    True,
+		    True,
+		    0,
+		)
+
+		menu_button = Gtk.Button(
+		    label="☰"
+		)
+
+		menu_button.set_tooltip_text(
+		    "Menu"
+		)
+
+		menu = Gtk.Menu()
+
+		appearance_item = Gtk.MenuItem(
+		    label="Appearance"
+		)
+
+		menu.append(
+		    appearance_item
+		)
+
+		light_item = Gtk.CheckMenuItem(
+		    label="BcalcOS Light"
+		)
+
+		dark_item = Gtk.CheckMenuItem(
+		    label="BcalcOS Dark"
+		)
+		
+		light_item.set_active(True)
+
+		appearance_menu = Gtk.Menu()
+
+		appearance_menu.append(
+		    light_item
+		)
+
+		appearance_menu.append(
+		    dark_item
+		)
+
+		appearance_item.set_submenu(
+		    appearance_menu
+		)
+
+		menu.append(
+		    Gtk.SeparatorMenuItem()
+		)
+
+		about_item = Gtk.MenuItem(
+		    label="About"
+		)
+
+		menu.append(
+		    about_item
+		)
+
+		exit_item = Gtk.MenuItem(
+		    label="Exit"
+		)
+
+		menu.append(
+		    exit_item
+		)
+
+		menu.show_all()
+
+
+		def show_menu(button):
+		    menu.popup_at_widget(
+			button,
+			Gdk.Gravity.NORTH_EAST,
+			Gdk.Gravity.SOUTH_EAST,
+			None,
+		    )
+
+		def set_light_theme(menu_item):
+		    if menu_item.get_active():
+		        dark_item.set_active(False)
+		        Gtk.Settings.get_default().set_property(
+		            "gtk-application-prefer-dark-theme", False
+		        )
+		        install_css(MAIN_CSS)
+
+		def set_dark_theme(menu_item):
+		    if menu_item.get_active():
+		        light_item.set_active(False)
+		        Gtk.Settings.get_default().set_property(
+		            "gtk-application-prefer-dark-theme", True
+		        )
+		        install_css(DARK_CSS)
+
+		def exit_welcome_center(menu_item):
+		    Gtk.main_quit()
+
+		def show_about(menu_item):
+		    about = Gtk.AboutDialog(
+			transient_for=self,
+			modal=True,
+		    )
+
+		    about.set_program_name(
+			"BcalcOS Welcome Center"
+		    )
+
+		    about.set_version(
+			"version 1.3.1"
+		    )
+
+		    about.set_comments(
+			"by briancalc"
+		    )
+
+		    about.set_license_type(
+			Gtk.License.GPL_3_0
+		    )
+
+		    about.run()
+		    about.destroy()
+
+		light_item.connect(
+		    "toggled",
+		    set_light_theme,
+		)
+
+		dark_item.connect(
+		    "toggled",
+		    set_dark_theme,
+		)
+
+		exit_item.connect(
+		    "activate",
+		    exit_welcome_center,
+		)
+
+		about_item.connect(
+		    "activate",
+		    show_about,
+		)
+
+		menu_button.connect(
+		    "clicked",
+		    show_menu,
+		)
+
+		footer_box.pack_end(
+		    menu_button,
+		    False,
+		    False,
+		    0,
 		)
 
 		outer.pack_start(
-			footer,
-			False,
-			False,
-			0,
+		    footer_box,
+		    False,
+		    False,
+		    0,
 		)
+
 
 	# ========================================================
 	# CATEGORY CARD
@@ -1270,15 +1506,10 @@ class WelcomeApp(Gtk.Window):
 				)
 				button.set_sensitive(False)
 			else:
-				# Installed but removable.
-				status_label.set_markup(
-					f'<span foreground="{COLOR_INSTALLED}">'
-					f'✓ Installed</span>'
-					f'  <span foreground="{COLOR_REMOVE}"'
-					f' font_weight="bold">REMOVE?</span>'
-				)
+
+				status_label.set_text("✓ Installed  ·  REMOVE?")
 				status_label.get_style_context().add_class(
-					"status-installed"
+				    "status-installed-remove"
 				)
 
 		elif is_installed is None:
@@ -1754,14 +1985,10 @@ class WelcomeApp(Gtk.Window):
 					False
 				)
 			else:
-				status.set_markup(
-					f'<span foreground="{COLOR_INSTALLED}">'
-					f'✓ Installed</span>'
-					f'  <span foreground="{COLOR_REMOVE}"'
-					f' font_weight="bold">REMOVE?</span>'
-				)
-				info["button"].set_sensitive(
-					True
+
+				status.set_text("✓ Installed  ·  REMOVE?")
+				status.get_style_context().add_class(
+				    "status-installed-remove"
 				)
 
 		self.installed_status[
@@ -1843,19 +2070,14 @@ class WelcomeApp(Gtk.Window):
 
 			status = info["status"]
 
-			status.set_markup(
-				f'<span foreground="{COLOR_INSTALLED}">'
-				f'✓ Installed</span>'
-				f'  <span foreground="{COLOR_REMOVE}"'
-				f' font_weight="bold">REMOVE?</span>'
-			)
+			status.set_text("✓ Installed  ·  REMOVE?")
 
 			status.get_style_context().remove_class(
 				"status-action"
 			)
 
 			status.get_style_context().add_class(
-				"status-installed"
+				"status-installed-remove"
 			)
 
 			info["button"].set_sensitive(
@@ -2818,13 +3040,11 @@ BACKSPACE="guess"
 
 def main():
 
-	# Keep GTK's environment predictable.
-	os.environ.setdefault(
-		"GTK_THEME",
-		"Adwaita",
+	Gtk.Settings.get_default().set_property(
+		"gtk-theme-name", "Adwaita"
 	)
 
-	install_css()
+	install_css(MAIN_CSS)
 
 	app = WelcomeApp()
 

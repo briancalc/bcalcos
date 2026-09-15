@@ -1,0 +1,1012 @@
+#!/usr/bin/env python3
+# quail-system
+# Quail System v1.3
+#
+# BcalcOS system information utility.
+#
+# Reports useful system information
+
+import os
+import platform
+import re
+import shutil
+import subprocess
+import tkinter as tk
+import tkinter.font as tkfont
+
+
+# ============================================================
+# Quail / BcalcOS color palette
+# ============================================================
+
+COLOR_PRIMARY = "#BA7800"
+COLOR_PRIMARY_DARK = "#8A5A00"
+COLOR_PRIMARY_LIGHT = "#D99A28"
+COLOR_PRIMARY_LIGHT_LIGHT = "#EBC978"
+
+COLOR_BG = "#F5F6F8"
+COLOR_SURFACE = "#FFFFFF"
+COLOR_SURFACE_ALT = "#FBF9F5"
+
+COLOR_TEXT = "#2C3E50"
+COLOR_TEXT_MUTED = "#68717A"
+COLOR_TEXT_LIGHT = "#9299A0"
+
+COLOR_BORDER = "#E2E5E8"
+COLOR_BORDER_GOLD = "#E5C88F"
+
+COLOR_WHITE = "#FFFFFF"
+
+FONT_PRIMARY = "Inter"
+FONT_HEADING = "Poppins"
+FONT_MONO = "monospace"
+
+
+# ============================================================
+# System information helpers
+# ============================================================
+
+def command_output(command, timeout=2):
+    """Return command output, or an empty string on failure."""
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False
+        )
+
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+    except (FileNotFoundError, subprocess.SubprocessError, OSError):
+        pass
+
+    return ""
+
+
+def read_file(path):
+    """Return a text file's contents, or an empty string."""
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            return file.read()
+
+    except (OSError, UnicodeDecodeError):
+        return ""
+
+
+def get_os_release():
+    """Read /etc/os-release into a dictionary."""
+    values = {}
+
+    contents = read_file("/etc/os-release")
+
+    for line in contents.splitlines():
+        line = line.strip()
+
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+
+        value = value.strip()
+
+        if len(value) >= 2:
+            if value[0] == '"' and value[-1] == '"':
+                value = value[1:-1]
+            elif value[0] == "'" and value[-1] == "'":
+                value = value[1:-1]
+
+        values[key] = value
+
+    return values
+
+
+def get_bcalcos_version():
+    """
+    Return the BcalcOS version from /etc/os-release.
+
+    BcalcOS is expected to provide a VERSION_ID value in
+    /etc/os-release. If it is not present, report unavailable
+    rather than guessing.
+    """
+    values = get_os_release()
+
+    version = values.get("VERSION_ID")
+
+    if version:
+        return version
+
+    return "Not available"
+
+
+def get_base_os():
+    """Return the underlying OS identification."""
+    values = get_os_release()
+
+    pretty_name = values.get("PRETTY_NAME")
+
+    if pretty_name:
+        return pretty_name
+
+    name = values.get("NAME")
+
+    if name:
+        version = values.get("VERSION")
+
+        if version:
+            return f"{name} {version}"
+
+        return name
+
+    return "Not available"
+
+
+def get_kernel():
+    """Return the running kernel version."""
+    return platform.release() or "Not available"
+
+
+def get_architecture():
+    """Return the system architecture."""
+    return platform.machine() or "Not available"
+
+
+def get_desktop():
+    """Identify the desktop environment."""
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP", "")
+
+    if desktop:
+        return desktop
+
+    desktop = os.environ.get("XDG_SESSION_DESKTOP", "")
+
+    if desktop:
+        return desktop
+
+    return "Not available"
+
+
+def get_display_manager():
+    """Identify the configured display manager."""
+    path = "/etc/X11/default-display-manager"
+
+    if os.path.exists(path):
+        value = read_file(path).strip()
+
+        if value:
+            return os.path.basename(value)
+
+    return "Not available"
+
+
+def get_x_server():
+    """
+    Identify the actual running X server and its version.
+
+    BcalcOS uses XLibre. XLibre commonly retains the Xorg-compatible
+    executable name, so the process name alone is not sufficient.
+
+    The installed xserver-xorg-core package version is used when
+    available because the XLibre server may identify itself as
+    X.Org in its executable version output.
+    """
+
+    # Find likely X server processes.
+    output = command_output(
+        ["ps", "-eo", "pid=,comm=,args="],
+        timeout=2
+    )
+
+    if not output:
+        return "Not available"
+
+    candidates = []
+
+    for line in output.splitlines():
+        line = line.strip()
+
+        if not line:
+            continue
+
+        parts = line.split(None, 2)
+
+        if len(parts) < 2:
+            continue
+
+        pid = parts[0]
+        command = parts[1]
+
+        # XLibre commonly uses an Xorg-compatible executable name.
+        if command in ("Xorg", "X", "Xorg.bin"):
+            candidates.append((pid, line))
+
+    if not candidates:
+        return "Not available"
+
+    for pid, process_line in candidates:
+
+        # First try the running executable's version information.
+        executable = f"/proc/{pid}/exe"
+
+        try:
+            result = subprocess.run(
+                [executable, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                check=False
+            )
+
+            version_output = (
+                result.stdout + "\n" + result.stderr
+            ).strip()
+
+            if version_output:
+                lower_output = version_output.lower()
+
+                # Some XLibre builds identify themselves directly.
+                if "xlibre" in lower_output:
+                    match = re.search(
+                        r"xlibre(?:\s+x\s+server)?\s+([0-9][0-9.]*)",
+                        version_output,
+                        re.IGNORECASE
+                    )
+
+                    if match:
+                        return f"XLibre {match.group(1)}"
+
+                    return "XLibre"
+
+        except (FileNotFoundError, PermissionError,
+                subprocess.SubprocessError, OSError):
+            pass
+
+        # Fall back to inspecting the process command line.
+        lower_process = process_line.lower()
+
+        if "xlibre" in lower_process:
+            return "XLibre"
+
+    # XLibre may identify its executable as X.Org. On BcalcOS,
+    # obtain the installed server package version directly.
+    package_version = command_output(
+        [
+            "dpkg-query",
+            "-W",
+            "-f=${Version}",
+            "xserver-xorg-core"
+        ],
+        timeout=2
+    )
+
+    if package_version:
+        return f"XLibre {package_version}"
+
+    return "X server detected"
+
+
+def get_cpu():
+    """Return a simple CPU description."""
+    contents = read_file("/proc/cpuinfo")
+
+    for line in contents.splitlines():
+        if line.startswith("model name"):
+            parts = line.split(":", 1)
+
+            if len(parts) == 2:
+                return parts[1].strip()
+
+        if line.startswith("Hardware"):
+            parts = line.split(":", 1)
+
+            if len(parts) == 2:
+                return parts[1].strip()
+
+    value = platform.processor()
+
+    if value:
+        return value
+
+    return "Not available"
+
+
+def get_memory():
+    """Return installed physical memory."""
+    contents = read_file("/proc/meminfo")
+
+    match = re.search(
+        r"^MemTotal:\s+(\d+)\s+kB",
+        contents,
+        re.MULTILINE
+    )
+
+    if not match:
+        return "Not available"
+
+    kilobytes = int(match.group(1))
+
+    gigabytes = kilobytes / (1024 * 1024)
+
+    if gigabytes >= 1:
+        return f"{gigabytes:.1f} GB"
+
+    megabytes = kilobytes / 1024
+
+    return f"{megabytes:.0f} MB"
+
+
+def get_graphics():
+    """Return graphics hardware information."""
+    if not shutil.which("lspci"):
+        return "Not available"
+
+    output = command_output(
+        ["lspci"],
+        timeout=2
+    )
+
+    if not output:
+        return "Not available"
+
+    graphics = []
+
+    for line in output.splitlines():
+        lower_line = line.lower()
+
+        if (
+            "vga compatible controller" in lower_line
+            or "3d controller" in lower_line
+            or "display controller" in lower_line
+        ):
+            parts = line.split(":", 2)
+
+            if len(parts) >= 3:
+                graphics.append(parts[2].strip())
+            else:
+                graphics.append(line.strip())
+
+    if graphics:
+        return "\n".join(graphics)
+
+    return "Not available"
+
+
+def format_bytes(value):
+    """Format a byte count for human-readable display."""
+    units = (
+        "B",
+        "KB",
+        "MB",
+        "GB",
+        "TB",
+        "PB"
+    )
+
+    value = float(value)
+
+    for unit in units:
+        if value < 1024:
+            if unit == "B":
+                return f"{value:.0f} {unit}"
+
+            return f"{value:.1f} {unit}"
+
+        value /= 1024
+
+    return f"{value:.1f} EB"
+
+
+def get_disk_usage(path):
+    """Return disk usage for a filesystem path."""
+    try:
+        total, used, free = shutil.disk_usage(path)
+
+        used_percent = (used / total) * 100 if total else 0
+
+        return (
+            f"{format_bytes(used)} used / "
+            f"{format_bytes(total)} "
+            f"({used_percent:.0f}%)"
+        )
+
+    except OSError:
+        return "Not available"
+
+
+def build_report():
+    """Build the complete system report."""
+
+    bcalcos_version = get_bcalcos_version()
+    base_os = get_base_os()
+    kernel = get_kernel()
+    architecture = get_architecture()
+    desktop = get_desktop()
+    display_manager = get_display_manager()
+    x_server = get_x_server()
+
+    cpu = get_cpu()
+    memory = get_memory()
+    graphics = get_graphics()
+
+    root_usage = get_disk_usage("/")
+    home_usage = get_disk_usage("/home")
+
+    lines = [
+        "BcalcOS System Report",
+        "=====================",
+        "",
+        "BcalcOS",
+        "-------",
+        f"Version:          {bcalcos_version}",
+        "",
+        "System",
+        "------",
+        f"Base OS:          {base_os}",
+        f"Kernel:           {kernel}",
+        f"Architecture:     {architecture}",
+        f"Desktop:          {desktop}",
+        f"Display manager:  {display_manager}",
+        f"X server:         {x_server}",
+        "",
+        "Hardware",
+        "--------",
+        f"CPU:              {cpu}",
+        f"Memory:           {memory}",
+        f"Graphics:         {graphics}",
+        "",
+        "Storage",
+        "-------",
+        f"Root (/):         {root_usage}",
+        f"Home (/home):     {home_usage}",
+    ]
+
+    return "\n".join(lines)
+
+
+# ============================================================
+# Quail System GUI
+# ============================================================
+
+class QuailSystem:
+
+    def __init__(self, root):
+
+        self.root = root
+
+        self.root.title("")
+        self.root.geometry("720x650")
+        self.root.minsize(600, 560)
+
+        self.root.configure(bg=COLOR_BG)
+
+        self.font_title = tkfont.Font(
+            family=FONT_HEADING,
+            size=17,
+            weight="bold"
+        )
+
+        self.font_section = tkfont.Font(
+            family=FONT_HEADING,
+            size=11,
+            weight="bold"
+        )
+
+        self.font_label = tkfont.Font(
+            family=FONT_PRIMARY,
+            size=10
+        )
+
+        self.font_value = tkfont.Font(
+            family=FONT_MONO,
+            size=10
+        )
+
+        self.font_button = tkfont.Font(
+            family=FONT_PRIMARY,
+            size=10
+        )
+
+        self.create_interface()
+
+        self.refresh()
+
+
+    # --------------------------------------------------------
+    # Interface
+    # --------------------------------------------------------
+
+    def create_interface(self):
+
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(1, weight=1)
+
+        # ----------------------------------------------------
+        # Header
+        # ----------------------------------------------------
+
+        header = tk.Frame(
+            self.root,
+            bg=COLOR_BG
+        )
+
+        header.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            padx=24,
+            pady=(20, 0)
+        )
+
+        title = tk.Label(
+            header,
+            text="Quail System",
+            font=self.font_title,
+            fg=COLOR_TEXT,
+            bg=COLOR_BG
+        )
+
+        title.pack(
+            anchor="w"
+        )
+
+        subtitle = tk.Label(
+            header,
+            text="System information",
+            font=self.font_label,
+            fg=COLOR_TEXT_MUTED,
+            bg=COLOR_BG
+        )
+
+        subtitle.pack(
+            anchor="w",
+            pady=(2, 8)
+        )
+
+        separator = tk.Frame(
+            header,
+            height=2,
+            bg=COLOR_PRIMARY_LIGHT
+        )
+
+        separator.pack(
+            fill="x"
+        )
+
+        # ----------------------------------------------------
+        # Main content
+        # ----------------------------------------------------
+
+        content_outer = tk.Frame(
+            self.root,
+            bg=COLOR_BG
+        )
+
+        content_outer.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=24,
+            pady=(14, 10)
+        )
+
+        content_outer.columnconfigure(0, weight=1)
+        content_outer.rowconfigure(0, weight=1)
+
+        self.report_frame = tk.Frame(
+            content_outer,
+            bg=COLOR_SURFACE,
+            highlightbackground=COLOR_BORDER,
+            highlightthickness=1
+        )
+
+        self.report_frame.grid(
+            row=0,
+            column=0,
+            sticky="nsew"
+        )
+
+        # ----------------------------------------------------
+        # Scrollable report
+        # ----------------------------------------------------
+
+        self.canvas = tk.Canvas(
+            self.report_frame,
+            bg=COLOR_SURFACE,
+            highlightthickness=0
+        )
+
+        self.scrollbar = tk.Scrollbar(
+            self.report_frame,
+            orient="vertical",
+            command=self.canvas.yview
+        )
+
+        self.canvas.configure(
+            yscrollcommand=self.scrollbar.set
+        )
+
+        self.canvas.grid(
+            row=0,
+            column=0,
+            sticky="nsew"
+        )
+
+        self.scrollbar.grid(
+            row=0,
+            column=1,
+            sticky="ns"
+        )
+
+        self.report_frame.columnconfigure(
+            0,
+            weight=1
+        )
+
+        self.report_frame.rowconfigure(
+            0,
+            weight=1
+        )
+
+        self.report_content = tk.Frame(
+            self.canvas,
+            bg=COLOR_SURFACE
+        )
+
+        self.canvas_window = self.canvas.create_window(
+            (0, 0),
+            window=self.report_content,
+            anchor="nw"
+        )
+
+        self.report_content.bind(
+            "<Configure>",
+            self.update_scroll_region
+        )
+
+        self.canvas.bind(
+            "<Configure>",
+            self.resize_report_content
+        )
+
+        # ----------------------------------------------------
+        # Buttons
+        # ----------------------------------------------------
+
+        button_frame = tk.Frame(
+            self.root,
+            bg=COLOR_BG
+        )
+
+        button_frame.grid(
+            row=2,
+            column=0,
+            sticky="ew",
+            padx=24,
+            pady=(0, 20)
+        )
+
+        button_frame.columnconfigure(
+            0,
+            weight=1
+        )
+
+        button_frame.columnconfigure(
+            1,
+            weight=1
+        )
+
+        button_frame.columnconfigure(
+            2,
+            weight=1
+        )
+
+        self.copy_button = tk.Button(
+            button_frame,
+            text="Copy Report",
+            command=self.copy_report,
+            font=self.font_button,
+            fg=COLOR_TEXT,
+            bg=COLOR_SURFACE_ALT,
+            activeforeground=COLOR_TEXT,
+            activebackground=COLOR_SURFACE_ALT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER_GOLD,
+            highlightcolor=COLOR_PRIMARY,
+            padx=10,
+            pady=7,
+            cursor="hand2"
+        )
+
+        self.copy_button.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            padx=(0, 5)
+        )
+
+        self.refresh_button = tk.Button(
+            button_frame,
+            text="Refresh",
+            command=self.refresh,
+            font=self.font_button,
+            fg=COLOR_WHITE,
+            bg=COLOR_PRIMARY,
+            activeforeground=COLOR_WHITE,
+            activebackground=COLOR_PRIMARY_DARK,
+            relief="flat",
+            bd=0,
+            padx=10,
+            pady=7,
+            cursor="hand2"
+        )
+
+        self.refresh_button.grid(
+            row=0,
+            column=1,
+            sticky="ew",
+            padx=5
+        )
+
+        self.close_button = tk.Button(
+            button_frame,
+            text="Close",
+            command=self.root.destroy,
+            font=self.font_button,
+            fg=COLOR_TEXT,
+            bg=COLOR_SURFACE,
+            activeforeground=COLOR_TEXT,
+            activebackground=COLOR_SURFACE_ALT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER,
+            highlightcolor=COLOR_PRIMARY,
+            padx=10,
+            pady=7,
+            cursor="hand2"
+        )
+
+        self.close_button.grid(
+            row=0,
+            column=2,
+            sticky="ew",
+            padx=(5, 0)
+        )
+
+
+    # --------------------------------------------------------
+    # Report display
+    # --------------------------------------------------------
+
+    def clear_report(self):
+
+        for widget in self.report_content.winfo_children():
+            widget.destroy()
+
+
+    def add_section(self, title):
+
+        section = tk.Label(
+            self.report_content,
+            text=title,
+            font=self.font_section,
+            fg=COLOR_PRIMARY_DARK,
+            bg=COLOR_SURFACE
+        )
+
+        section.pack(
+            anchor="w",
+            padx=18,
+            pady=(14, 5)
+        )
+
+
+    def add_row(self, label, value):
+
+        row = tk.Frame(
+            self.report_content,
+            bg=COLOR_SURFACE
+        )
+
+        row.pack(
+            fill="x",
+            padx=18,
+            pady=2
+        )
+
+        row.columnconfigure(
+            1,
+            weight=1
+        )
+
+        label_widget = tk.Label(
+            row,
+            text=f"{label}:",
+            font=self.font_label,
+            fg=COLOR_TEXT_MUTED,
+            bg=COLOR_SURFACE,
+            anchor="w"
+        )
+
+        label_widget.grid(
+            row=0,
+            column=0,
+            sticky="nw",
+            padx=(0, 12)
+        )
+
+        value_widget = tk.Label(
+            row,
+            text=value,
+            font=self.font_value,
+            fg=COLOR_TEXT,
+            bg=COLOR_SURFACE,
+            anchor="w",
+            justify="left",
+            wraplength=540
+        )
+
+        value_widget.grid(
+            row=0,
+            column=1,
+            sticky="ew"
+        )
+
+        return value_widget
+
+
+    def refresh(self):
+
+        self.clear_report()
+
+        # ----------------------------------------------------
+        # BcalcOS
+        # ----------------------------------------------------
+
+        self.add_section("BcalcOS")
+
+        self.add_row(
+            "Version",
+            get_bcalcos_version()
+        )
+
+        # ----------------------------------------------------
+        # System
+        # ----------------------------------------------------
+
+        self.add_section("System")
+
+        self.add_row(
+            "Base OS",
+            get_base_os()
+        )
+
+        self.add_row(
+            "Kernel",
+            get_kernel()
+        )
+
+        self.add_row(
+            "Architecture",
+            get_architecture()
+        )
+
+        self.add_row(
+            "Desktop",
+            get_desktop()
+        )
+
+        self.add_row(
+            "Display manager",
+            get_display_manager()
+        )
+
+        self.value_display = self.add_row(
+            "X server",
+            get_x_server()
+        )
+
+        # ----------------------------------------------------
+        # Hardware
+        # ----------------------------------------------------
+
+        self.add_section("Hardware")
+
+        self.add_row(
+            "CPU",
+            get_cpu()
+        )
+
+        self.add_row(
+            "Memory",
+            get_memory()
+        )
+
+        self.add_row(
+            "Graphics",
+            get_graphics()
+        )
+
+        # ----------------------------------------------------
+        # Storage
+        # ----------------------------------------------------
+
+        self.add_section("Storage")
+
+        self.add_row(
+            "Root (/)",
+            get_disk_usage("/")
+        )
+
+        self.add_row(
+            "Home (/home)",
+            get_disk_usage("/home")
+        )
+
+        self.canvas.yview_moveto(0)
+
+
+    # --------------------------------------------------------
+    # Clipboard
+    # --------------------------------------------------------
+
+    def copy_report(self):
+
+        report = build_report()
+
+        self.root.clipboard_clear()
+        self.root.clipboard_append(report)
+        self.root.update()
+
+        original_text = self.copy_button.cget("text")
+
+        self.copy_button.config(
+            text="Copied!"
+        )
+
+        self.root.after(
+            1200,
+            lambda: self.copy_button.config(
+                text=original_text
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # Scrolling
+    # --------------------------------------------------------
+
+    def update_scroll_region(self, event=None):
+
+        self.canvas.configure(
+            scrollregion=self.canvas.bbox("all")
+        )
+
+
+    def resize_report_content(self, event):
+
+        self.canvas.itemconfigure(
+            self.canvas_window,
+            width=event.width
+        )
+
+
+# ============================================================
+# Main
+# ============================================================
+
+def main():
+
+    root = tk.Tk()
+
+    QuailSystem(root)
+
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

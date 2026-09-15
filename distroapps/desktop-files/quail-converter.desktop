@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.3
 Type=Application
-Name=Quail Calc
-Exec=/usr/bin/quail_calc
-Icon=org.xfce.panel.windowmenu
+Name=Quail Converter
+Exec=/usr/bin/quail-converter
+Icon=org.xfce.panel.netload
 Terminal=false
 Categories=BcalcOS;

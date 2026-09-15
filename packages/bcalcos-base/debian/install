@@ -13,6 +13,8 @@ distroscripts/weekly-fstrim          usr/sbin/
 distroscripts/daily_processes         etc/cron.d/
 distroscripts/weekly_processes         etc/cron.d/
 distroconfig/local.conf    etc/fonts/
+distroconfig/os-release    etc/
+distroconfig/50-os-prober.cfg   etc/default/grub.d/
 branding/bcalcosbrand/*    usr/share/bcalcosbrand/
 #branding/skelnew/.config/Mousepad/accels.scm    etc/skel/.config/Mousepad/
 #branding/skelnew/.config/Thunar/accels.scm    etc/skel/.config/Thunar/
