@@ -62,7 +62,7 @@ jobs:
           BASE_URL="https://briancalc.github.io/bcalcos"
           curl -fsSL "$BASE_URL/dists/bobwhite/main/binary-amd64/Packages" -o Packages
           mkdir -p existing-packages
-          for pkg in bcalcos-extra marp-cli qownnotes flacon; do
+          for pkg in marp-cli qownnotes flacon; do
             fname=$(awk -v p="$pkg" '/^Package: /{cur=$2} /^Filename: /{if (cur==p){print $2; exit}}' Packages)
             [ -n "$fname" ] || { echo "ERROR: $pkg not found in repository index" >&2; exit 1; }
             curl -fsSL "$BASE_URL/$fname" -o "existing-packages/$(basename "$fname")"
