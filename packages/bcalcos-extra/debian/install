@@ -2,5 +2,5 @@ distroapps/quail-system/quail-system    usr/bin/
 distroapps/quail-converter/quail-converter    usr/bin/
 distroapps/desktop-files/quail-system.desktop    usr/share/applications/
 distroapps/desktop-files/quail-converter.desktop    usr/share/applications/
-branding/quail-icons/    usr/share/icons/quail-icons/
-branding/quail-gtk/      usr/share/themes/Quail${Space}GTK/
+branding/quail-icons/*    usr/share/icons/quail-icons/
+branding/quail-gtk/*      usr/share/themes/Quail${Space}GTK/
