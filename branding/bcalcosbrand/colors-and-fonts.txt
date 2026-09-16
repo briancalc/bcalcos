@@ -1,0 +1,107 @@
+# ============================================================
+# BcalcOS BRAND REFERENCE
+# ============================================================
+
+# ------------------------------------------------------------
+# SHARED BRAND COLORS
+# Used identically in Light and Dark modes
+# ------------------------------------------------------------
+
+  primary_dark      #8A5A00   bronze — the anchor of the brand; deep
+                              brown-orange used for emphasis in both
+                              modes (hovered links, deep shadows)
+
+  # Window chrome
+  titlebar_active          #8A5A00   bronze; active window titlebar
+  titlebar_active_text     #FBF9F5   cream; active window title text
+  titlebar_inactive        #C7A25C   antique brass; inactive window titlebar
+  titlebar_inactive_text   #F5F6F8   very light gray; inactive title text
+
+
+# ------------------------------------------------------------
+# LIGHT MODE (default)
+# ------------------------------------------------------------
+
+  # Brand gold
+  primary           #BA7800   warm brown-orange; the signature gold —
+                              selections, highlights, progress bars
+  primary_light     #D99A28   lighter gold; accents on light backgrounds
+                              where primary would be too heavy
+
+  # Surfaces
+  bg                #F5F6F8   very light gray; page/window background
+  surface           #FFFFFF   pure white; cards and raised panels
+  surface_alt       #FBF9F5   off-white cream; alternate panels,
+                              entries, menu backgrounds
+
+  # Text
+  text              #2C3E50   dark blue-gray; primary text
+  text_muted        #68717A   medium blue-gray; secondary text, captions
+  text_light        #9299A0   light blue-gray; hints, footers, watermark
+
+  # Borders
+  border            #E2E5E8   light gray; standard dividing lines
+  border_gold       #E5C88F   light tan/beige; brand-accent borders,
+                              hover outlines
+
+  # Status
+  installed         #2E8B57   sea green; success / "installed" indicators
+  installed_bg      #EEF8F2   pale green tint; success backgrounds
+
+  # States
+  disabled          #F0F1F2   very light gray; disabled control fills
+  disabled_border   #E5E7E9   slightly darker gray; disabled outlines
+  button_hover      #FFFDF8   warm white; button hover fill
+  button_active     #F7EEDC   pale gold; pressed-button fill
+
+  # Icon wells
+  icon_box_bg       #FBF5E9   cream; icon container background
+  icon_box_border   #EBD7AD   soft tan; icon container outline
+
+  # Accents
+  amber             #EBC978   amber; light-mode warning/note accent
+
+# ------------------------------------------------------------
+# DARK MODE
+# ------------------------------------------------------------
+
+  # Brand gold (reshifted for dark backgrounds)
+  primary           #D99A28   goldenrod amber; the gold against dark —
+                              same role, brightened to survive dark bg
+  primary_light     #F0BC5E   honey amber; glowing accent highlights
+
+  # Surfaces
+  bg                #221C11   dark bronze-black; deepest background
+  surface           #2B241A   espresso brown; cards and raised panels
+  surface_alt       #352C1E   leather brown; alternate panels/entries
+
+  # Text
+  text              #F3EEE4   eggshell white; primary text
+  text_muted        #C2B8A6   warm taupe gray; secondary text
+  text_light        #8F8574   weathered khaki; hints, footers
+
+  # Borders
+  border            #3E3526   dark umber; standard dividing lines
+  border_gold       #C7A25C   antique brass; brand-accent borders
+
+  # Status
+  installed         #5AB07E   luminous jade; success indicators
+  installed_bg      #1F3329   deep forest; success backgrounds
+
+  # States
+  disabled          #2E2A23   dark warm gray; disabled control fills
+  disabled_border   #262117   darker brown; disabled outlines
+  button_hover      #3A3021   warm brown; button hover fill
+  button_active     #4A3D28   deeper brown; pressed-button fill
+
+  # Icon wells
+  icon_box_bg       #3A2F1C   dark leather; icon container background
+  icon_box_border   #554428   dark bronze; icon container outline
+
+# ------------------------------------------------------------
+# FONTS
+# ------------------------------------------------------------
+
+  heading           Poppins   headings, titles, splashes
+  primary           Inter     body text, buttons, labels
+  mono              Monospace terminal, code, calculated look

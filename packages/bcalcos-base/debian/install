@@ -26,3 +26,4 @@ distroapps/desktop-files/marp.desktop    usr/share/applications/
 distroapps/desktop-files/quail_calc.desktop    usr/share/applications/
 distroapps/desktop-files/quail_reminder.desktop    usr/share/applications/
 branding/bcalcosbrand/.face.icon    usr/share/bcalcosbrand/
+branding/bcalcosbrand/colors-and-fonts.txt    usr/share/bcalcosbrand/
