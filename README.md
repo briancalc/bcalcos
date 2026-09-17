@@ -27,28 +27,18 @@ And anyone else interested in a stable Linux distribution that uses SysVinit, XL
 
 ## 3. Learn More
 
-**Website**<br>
-[BcalcOS.org](https://bcalcos.org/)<br>
-General Overview.<br>
-<br>
-**BcalcOS Community**<br>
-[Discourse](https://bcalcos.discourse.group/)<br>
+**Website:** [BcalcOS.org](https://bcalcos.org/)<br>
+![BcalcOS website](readmeimages/readme-website.png)
+<br><br>
+**BcalcOS Community:** [Discourse](https://bcalcos.discourse.group/)<br>
 Primary place for announcements, discussion, and support.<br>
 Includes short vignettes (~1 to 2 min reads) with useful information.<br>
-A few examples:<br>
-: BcalcOS Installer: Design Notes and Trade-offs<br>
-: BcalcOS Installation Process<br>
-: Encryption Explained<br>
-: XLibre: Things to Know<br>
-: Installing Software<br>
-: AI and BcalcOS<br>
-<br>
-**BcalcOS Downloads**<br>
-[SourceForge](https://sourceforge.net/projects/bcalcos-linux/files/)<br>
+![BcalcOS Community](readmeimages/readme-discourse.png)
+<br><br>
+**BcalcOS Downloads:** [SourceForge](https://sourceforge.net/projects/bcalcos-linux/files/)<br>
 Signed ISO and checksum.<br>
 <br>
-**BcalcOS Repository**<br>
-[GitHub](https://github.com/briancalc/bcalcos)<br>
+**BcalcOS Repository:** [GitHub](https://github.com/briancalc/bcalcos)<br>
  Contains the source, configuration, packaging, and other components used to build BcalcOS.
 
 ---
