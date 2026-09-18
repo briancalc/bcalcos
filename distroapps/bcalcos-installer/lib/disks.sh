@@ -1,6 +1,6 @@
 #!/bin/bash
 #DISKS.SH
-#v1.3
+#v1.3.5
 
 MIN_DISK_SIZE_GIB=80
 
@@ -105,12 +105,15 @@ detect_live_media_device() {
             return 0
         fi
 
-        # If SOURCE itself is a disk device, use it directly.
-        if [[ "$source" == /dev/* ]] &&
-           [[ "$(lsblk -dnro TYPE -- "$source" 2>/dev/null)" == "disk" ]]; then
-            LIVE_MEDIA_DEVICE="$source"
-            export LIVE_MEDIA_DEVICE
-            return 0
+        # Accept both physical disk and optical/ISO live media
+        if [[ "$source" == /dev/* ]]; then
+            local mtype
+            mtype="$(lsblk -dnro TYPE -- "$source" 2>/dev/null)"
+            if [[ "$mtype" == "disk" || "$mtype" == "rom" ]]; then
+                LIVE_MEDIA_DEVICE="$source"
+                export LIVE_MEDIA_DEVICE
+                return 0
+            fi
         fi
     done
 

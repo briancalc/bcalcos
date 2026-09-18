@@ -34,10 +34,10 @@ Description:  quail abstract
 
 ## 4. Custom App Icons
 
-File:  quail_splash2.png
+File:  quail_splash2.png<br>
 Description: quail landing
 
-File:  standing.icon
+File:  standing.icon<br>
 Description: quail standing
 
 ---
