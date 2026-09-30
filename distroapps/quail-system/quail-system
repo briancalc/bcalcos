@@ -922,7 +922,7 @@ class QuailSystem:
         )
 
         self.add_row(
-            "Memory",
+            "Memory Available to Linux",
             get_memory()
         )
 

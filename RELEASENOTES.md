@@ -1,10 +1,11 @@
 # Readme Contents
 
 1. [Contents](#1-content)
-2. [Release 1.3](#release-1.3)
-3. [Release 1.2](#release-1.2)
-4. [Release 1.1](#release-1.1)
-5. [Release 1.0](#release-1.0)
+2. [Release 1.3.5](#release-1.3.5)
+3. [Release 1.3](#release-1.3)
+4. [Release 1.2](#release-1.2)
+5. [Release 1.1](#release-1.1)
+6. [Release 1.0](#release-1.0)
 
 ---
 
@@ -14,15 +15,24 @@ Brief comments on release changes.
 
 ---
 
-## 2. Release 1.3 
+## 2. Release 1.3.5 
+
+- BcalcOS 1.3.5 package release.
+- address issue with installation in QEMU virtual environment
+- add bcalcos-extra package to ISO so manual installation not required
+
+---
+
+## 3. Release 1.3 
 
 - BcalcOS 1.3 package release.
 - updated BcalcOS installer:  home encryption now an option
 - updated BcalcOS installer:  swap encryption now automatic
 - updated BcalcOS Welcome with additional applications and system processes
+
 ---
 
-## 3. Release 1.2 
+## 4. Release 1.2 
 ALPHA RELEASE
 
 **For installation on secondary machine only.**
@@ -35,7 +45,7 @@ ALPHA RELEASE
 
 ---
 
-## 4. Release 1.1 
+## 5. Release 1.1 
 ALPHA RELEASE
 
 **For installation on secondary machine only.**
@@ -46,7 +56,7 @@ ALPHA RELEASE
 
 ---
 
-## 5. Release 1.0 
+## 6. Release 1.0 
 ALPHA RELEASE
 
 **For installation on secondary machine only.**
