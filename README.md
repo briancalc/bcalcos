@@ -10,7 +10,7 @@ BcalcOS is built around two complementary ideas: simpler software is usually bet
 
 ## What is BcalcOS?
 
-BcalcOS starts with Devuan and builds its own desktop system on top of it.
+BcalcOS starts with Devuan and builds its own system on top of it.
 
 Devuan provides the Debian-derived operating system foundation, including the kernel, core system components, security updates, and access to the large Debian software ecosystem.
 
@@ -32,18 +32,6 @@ The **goal is a stable, user-friendly, good-to-go, general use Linux desktop** t
 
 ---
 
-## The Foundation: Devuan
-
-BcalcOS is built on Devuan Excalibur.
-
-Devuan is a Debian-derived Linux distribution that maintains compatibility with the Debian software ecosystem while taking a different approach to system initialization. In particular, Devuan supports alternative init systems to systemd.
-
-BcalcOS uses SysVinit as its init system; Devuan provides the foundation that makes this choice possible without BcalcOS having to independently remove systemd from a standard Debian installation.
-
-For more background, see the BcalcOS Community vignette [Devuan: The Foundation of BcalcOS](https://bcalcos.discourse.group/t/devuan-the-foundation-of-bcalcos/30).
-
----
-
 ## The BcalcOS Desktop
 
 BcalcOS uses a defined set of major desktop components:
@@ -55,6 +43,18 @@ BcalcOS uses a defined set of major desktop components:
 | Display server | XLibre | X11 graphical display server |
 | Display manager | SLiM | Graphical login |
 | Desktop environment | Xfce | Graphical desktop |
+
+
+### The Foundation: Devuan
+
+BcalcOS is built on Devuan Excalibur.
+
+Devuan is a Debian-derived Linux distribution that maintains compatibility with the Debian software ecosystem while taking a different approach to system initialization. In particular, Devuan supports alternative init systems to systemd.
+
+BcalcOS uses SysVinit as its init system; Devuan provides the foundation that makes this choice possible without BcalcOS having to independently remove systemd from a standard Debian installation.
+
+For more background, see the BcalcOS Community vignette [Devuan: The Foundation of BcalcOS](https://bcalcos.discourse.group/t/devuan-the-foundation-of-bcalcos/30).
+
 
 ### SysVinit
 
@@ -209,7 +209,7 @@ It may be particularly interesting to those who:
 - want a predefined starting point rather than assembling the various components themselves
 - are interested in a small, independently maintained Linux distribution
 
-BcalcOS is not intended to be everything to everyone. Users needing applications that require systemd, or users looking for a rolling-release distribution, may find that another Linux distribution is a better fit.
+BcalcOS is not intended to be everything to everyone. Users needing applications that require systemd, or users looking for a rolling-release distribution, will likely find that another Linux distribution is a better fit.
 
 The [Why BcalcOS?](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignette provides a philosophical answer to why BcalcOS exists.
 
