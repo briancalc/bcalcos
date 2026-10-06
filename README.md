@@ -4,7 +4,31 @@ BcalcOS is a user-friendly Linux desktop distribution built on Devuan Excalibur.
 
 It combines the Devuan operating-system foundation with a defined desktop environment, deliberate system choices, custom configuration, applications, packages, a installer, and a software repository to provide a ready to use, general purpose desktop system.
 
-BcalcOS is built around two complementary ideas: simpler software is usually better and individual components should have a clear purpose and work well together. The project favors straightforward, easily understandable solutions.  It also recognizes that users should remain free to customize their systems.
+BcalcOS is built around complementary ideas: simpler software is usually better, individual components should have a clear purpose, and those components should work well together. The project favors straightforward, easily understandable solutions while recognizing that users should remain free to customize their systems.
+
+## Contents
+
+- [What is BcalcOS?](#what-is-bcalcos)
+- [The BcalcOS System](#the-bcalcos-system)
+  - [The Foundation: Devuan](#the-foundation-devuan)
+  - [SysVinit](#sysvinit)
+  - [XLibre](#xlibre)
+  - [SLiM](#slim)
+  - [Xfce](#xfce)
+- [What Makes It BcalcOS?](#what-makes-it-bcalcos)
+  - [A common starting system](#a-common-starting-system)
+  - [Custom installation](#custom-installation)
+  - [Welcome Center](#welcome-center)
+  - [Custom applications](#custom-applications)
+  - [BcalcOS Repositories](#bcalcos-repositories)
+  - [BcalcOS Visual Identity](#bcalcos-visual-identity)
+- [Software Distribution and Updates](#software-distribution-and-updates)
+- [How BcalcOS Is Built](#how-bcalcos-is-built)
+- [The BcalcOS Approach](#the-bcalcos-approach)
+- [Who Is BcalcOS For?](#who-is-bcalcos-for)
+- [Documentation and Community](#documentation-and-community)
+- [Current BcalcOS](#current-bcalcos)
+- [License](#license)
 
 ---
 
@@ -32,17 +56,17 @@ The **goal is a stable, user-friendly, good-to-go, general use Linux desktop** t
 
 ---
 
-## The BcalcOS Desktop
+## The BcalcOS System
 
-BcalcOS uses a defined set of major desktop components:
+BcalcOS is built from a defined set of major system components:
 
-| Component | BcalcOS choice | Purpose |
-|---|---|---|
-| Operating system foundation | Devuan Excalibur | Debian-derived Linux foundation |
-| Init system | SysVinit | System initialization |
-| Display server | XLibre | X11 graphical display server |
-| Display manager | SLiM | Graphical login |
-| Desktop environment | Xfce | Graphical desktop |
+| Component | BcalcOS choice |
+|---|---|
+| Operating system foundation | Devuan Excalibur |
+| Init system | SysVinit |
+| Display server | XLibre |
+| Display manager | SLiM |
+| Desktop environment | Xfce |
 
 
 ### The Foundation: Devuan
@@ -62,13 +86,13 @@ SysVinit is a mature and well-understood approach to system initialization. It b
 
 For further discussion, see the BcalcOS Community vignettes [SysVinit: System Initialization](https://bcalcos.discourse.group/t/sysvinit-system-initialization/34), and [Living Without systemd](https://bcalcos.discourse.group/t/living-without-systemd/55).
 
-We also have a ~12 part series (WIP)  **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which is part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/12 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/12 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/12 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/12 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/12 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), and [6/12 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67). 
+We also have a ~12 part series (WIP)  **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/12 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/12 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/12 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/12 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/12 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), and [6/12 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67). 
 
 ### XLibre
 
 BcalcOS uses XLibre as its display server.
 
-XLibre is a community-managed continuation of the X.Org X server and provides continued development of the X11 graphical environment while maintaining compatibility with the established X11 ecosystem.
+XLibre is a continuation of the X.Org X server and provides continued development of the X11 graphical environment while maintaining compatibility with the established X11 ecosystem.
 
 BcalcOS uses XLibre because the project considers it a capable and maintainable fit for the desktop system being built.
 
@@ -108,7 +132,7 @@ Users can subsequently customize the system to suit their own needs.
 
 BcalcOS includes its own terminal-based installer.
 
-The installer is designed specifically around the BcalcOS system rather than attempting to support a myriad of possible Linux installation scenarios. This allows the installation process to remain relatively straightforward but it also means that the installer has defined assumptions and limitations. <br>
+The installer is designed specifically around the BcalcOS system rather than attempting to support a wide range of possible Linux installation scenarios. This keeps the installation process relatively straightforward and beginner-friendly, but it also means the installer makes defined assumptions and has specific limitations. <br>
 ![BcalcOS Installer](readmeimages/readme-installer.png)<br>
 
 For a much more in depth discussion, see the BcalcOS Community vignettes [BcalcOS Installer:  Design Notes & Trade-offs](https://bcalcos.discourse.group/t/bcalcos-installer-design-notes-trade-offs/19), [BcalcOS Installation Process](https://bcalcos.discourse.group/t/bcalcos-installation-process/20), [Before You Install BcalcOS](https://bcalcos.discourse.group/t/before-you-install-bcalcos/22), [What Happens to the Disk?](https://bcalcos.discourse.group/t/what-happens-to-the-disk-during-installation/23), [Encryption Explained](https://bcalcos.discourse.group/t/encryption-explained/24), [Dual Boot Grub Note](https://bcalcos.discourse.group/t/dual-boot-grub-note/49), and [The BcalcOS Filesystem](https://bcalcos.discourse.group/t/the-bcalcos-filesystem/45).
@@ -132,7 +156,9 @@ These currently include applications and scripts such as:
 - Quail System
 - Quail Converter
 - Update Notifier
-- Fstrim Maintenance
+- Fstrim Maintenance<br>
+
+<img src="readmeimages/readme-quail-system.png" width="400"><br>
 
 For more details, see the BcalcOS Community vignettes [BcalcOS Extra Apps & Packages](https://bcalcos.discourse.group/t/bcalcos-extra-apps-packages/52) and [BcalcOS Maintenance Tools](https://bcalcos.discourse.group/t/bcalcos-maintenance-tools/41).
 
@@ -140,7 +166,7 @@ For more details, see the BcalcOS Community vignettes [BcalcOS Extra Apps & Pack
 
 Devuan repositories provide the majority of the underlying operating system and general-purpose software.
 
-BcalcOS maintains its own APT repository.  It includes both custom BcalcOS applications and packages as well as selected third-party applications that are not available through the standard Devuan repositories.  Currently, those independently developed applications include Marp, QOwnNotes, and Flacon.
+BcalcOS also maintains its own APT repository. It includes custom BcalcOS applications and packages, as well as selected third-party applications that are not available through the standard Devuan repositories. Currently, those third-party applications include Marp, QOwnNotes, and Flacon.
 
 The BcalcOS repository allows these packages to be installed and updated using the normal Debian/Devuan APT package-management system.
 
@@ -149,6 +175,7 @@ For additional information, see the BcalcOS Community vignettes [BcalcOS Softwar
 ### BcalcOS Visual Identity
 
 BcalcOS has its own aesthetics as part of the designed BcalcOS desktop experience.
+<img src="readmeimages/readme-quail-theme.png" width="400"><br>
 
 This includes branding as well as the Quail GTK theme and Quail Icons icon set.  All of which can, of course, be changed by users if desired.
 
@@ -202,15 +229,15 @@ And anyone else interested in a stable, general purpose Linux distribution that 
 
 It may be particularly interesting to those who:
 
-- wish to try a systemd free OS
-- prefer a straightforward init such as SysVinit
+- wish to try a systemd-free OS
+- prefer a straightforward init system such as SysVinit
 - want to use XLibre
 - like Brave Origin as the default browser
 - appreciate the familiar Xfce desktop
 - want a predefined starting point rather than assembling the various components themselves
 - are interested in a small, independently maintained Linux distribution
 
-BcalcOS is not intended to be everything to everyone. Users needing applications that require systemd, or users looking for a rolling-release distribution, will likely find that another Linux distribution is a better fit.
+BcalcOS is not intended to be everything to everyone. Users who need applications that require systemd, prefer a rolling-release distribution, or want the latest software versions will likely find that another Linux distribution is a better fit.
 
 The [Why BcalcOS?](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignette provides a philosophical answer to why BcalcOS exists.
 
