@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BcalcOS Welcome Center
-v1.3.1
+v1.3.2
 
 New Feature(s):
 - hamburger help menu
@@ -1728,6 +1728,78 @@ class WelcomeApp(Gtk.Window):
 			)
 
 	# ========================================================
+	# PACKAGE OPERATION PROGRESS
+	# ========================================================
+
+	def _show_package_progress(
+		self,
+		message,
+	):
+
+		dialog = Gtk.Dialog(
+			title="Working...",
+			transient_for=self,
+			flags=Gtk.DialogFlags.MODAL,
+		)
+
+		dialog.set_default_size(
+			480,
+			180,
+		)
+
+		box = dialog.get_content_area()
+
+		box.set_margin_start(25)
+		box.set_margin_end(25)
+		box.set_margin_top(25)
+		box.set_margin_bottom(25)
+		box.set_spacing(10)
+
+		label = Gtk.Label(
+			label=message
+		)
+
+		label.get_style_context().add_class(
+			"dialog-title"
+		)
+
+		box.pack_start(
+			label,
+			False,
+			False,
+			10,
+		)
+
+		progress = Gtk.ProgressBar()
+
+		progress.pulse()
+
+		box.pack_start(
+			progress,
+			False,
+			False,
+			10,
+		)
+
+		dialog.show_all()
+
+		def pulse():
+
+			if not dialog.get_visible():
+				return False
+
+			progress.pulse()
+
+			return True
+
+		pulse_id = GLib.timeout_add(
+			100,
+			pulse,
+		)
+
+		return dialog, pulse_id
+
+	# ========================================================
 	# PRIVILEGED PACKAGE INSTALL
 	# ========================================================
 
@@ -1752,12 +1824,18 @@ class WelcomeApp(Gtk.Window):
 			f"Installing {app_name}..."
 		)
 
+		progress_dialog, pulse_id = self._show_package_progress(
+			f"Installing {app_name}..."
+		)
+
 		thread = threading.Thread(
 			target=self._install_worker,
 			args=(
 				widget,
 				app_name,
 				package,
+				progress_dialog,
+				pulse_id,
 			),
 			daemon=True,
 		)
@@ -1769,6 +1847,8 @@ class WelcomeApp(Gtk.Window):
 		widget,
 		app_name,
 		package,
+		progress_dialog,
+		pulse_id,
 	):
 
 		try:
@@ -1807,14 +1887,17 @@ class WelcomeApp(Gtk.Window):
 				self._installation_success,
 				widget,
 				app_name,
+				progress_dialog,
+				pulse_id,
 			)
-
 		except Exception as exc:
 
 			GLib.idle_add(
 				self._installation_failed,
 				widget,
 				str(exc),
+				progress_dialog,
+				pulse_id,
 			)
 
 	# ========================================================
@@ -1842,12 +1925,18 @@ class WelcomeApp(Gtk.Window):
 			f"Removing {app_name}..."
 		)
 
+		progress_dialog, pulse_id = self._show_package_progress(
+			f"Removing {app_name}..."
+		)
+
 		thread = threading.Thread(
 			target=self._remove_worker,
 			args=(
 				widget,
 				app_name,
 				package,
+				progress_dialog,
+				pulse_id,
 			),
 			daemon=True,
 		)
@@ -1859,6 +1948,8 @@ class WelcomeApp(Gtk.Window):
 		widget,
 		app_name,
 		package,
+		progress_dialog,
+		pulse_id,
 	):
 
 		try:
@@ -1901,6 +1992,8 @@ class WelcomeApp(Gtk.Window):
 				self._removal_success,
 				widget,
 				app_name,
+				progress_dialog,
+				pulse_id,
 			)
 
 		except Exception as exc:
@@ -1910,6 +2003,8 @@ class WelcomeApp(Gtk.Window):
 				widget,
 				app_name,
 				str(exc),
+				progress_dialog,
+				pulse_id,
 			)
 
 	# ========================================================
@@ -1955,7 +2050,16 @@ class WelcomeApp(Gtk.Window):
 		self,
 		widget,
 		app_name,
+		progress_dialog,
+		pulse_id,
 	):
+
+		try:
+			GLib.source_remove(pulse_id)
+		except Exception:
+			pass
+
+		progress_dialog.destroy()
 
 		info = self.app_buttons.get(
 			app_name
@@ -2001,7 +2105,16 @@ class WelcomeApp(Gtk.Window):
 		self,
 		widget,
 		message,
+		progress_dialog,
+		pulse_id,
 	):
+
+		try:
+			GLib.source_remove(pulse_id)
+		except Exception:
+			pass
+
+		progress_dialog.destroy()
 
 		widget.set_sensitive(True)
 
@@ -2019,7 +2132,16 @@ class WelcomeApp(Gtk.Window):
 		self,
 		widget,
 		app_name,
+		progress_dialog,
+		pulse_id,
 	):
+
+		try:
+			GLib.source_remove(pulse_id)
+		except Exception:
+			pass
+
+		progress_dialog.destroy()
 
 		info = self.app_buttons.get(
 			app_name
@@ -2060,7 +2182,16 @@ class WelcomeApp(Gtk.Window):
 		widget,
 		app_name,
 		message,
+		progress_dialog,
+		pulse_id,
 	):
+
+		try:
+			GLib.source_remove(pulse_id)
+		except Exception:
+			pass
+
+		progress_dialog.destroy()
 
 		info = self.app_buttons.get(
 			app_name
@@ -2679,47 +2810,63 @@ class WelcomeApp(Gtk.Window):
 
 		try:
 
-			# Read existing file to preserve other settings
-			existing_content = ""
-
+			# Read the existing keyboard configuration.
 			try:
 				with open("/etc/default/keyboard", "r") as f:
 					existing_content = f.read()
-			except Exception:
-				pass
+			except Exception as exc:
+				raise RuntimeError(
+					f"Could not read /etc/default/keyboard: {exc}"
+				)
 
-			# Parse existing settings
-			xkb_model = "pc105"
-			xkb_variant = ""
-			xkb_options = ""
+			# Change only the XKBLAYOUT setting and preserve
+			# everything else in the existing file.
+			lines = existing_content.splitlines(
+				keepends=True
+			)
 
-			for line in existing_content.split("\n"):
-				if line.startswith("XKBMODEL="):
-					xkb_model = line.split("=", 1)[1].strip('"\'')
-				elif line.startswith("XKBVARIANT="):
-					xkb_variant = line.split("=", 1)[1].strip('"\'')
-				elif line.startswith("XKBOPTIONS="):
-					xkb_options = line.split("=", 1)[1].strip('"\'')
+			new_lines = []
+			layout_updated = False
 
-			# Build new content
-			new_content = f"""\
-# Keyboard layout configuration
-# Generated by BcalcOS Welcome Center
+			for line in lines:
 
-XKBMODEL="{xkb_model}"
-XKBLAYOUT="{layout_code}"
-XKBVARIANT="{xkb_variant}"
-XKBOPTIONS="{xkb_options}"
-BACKSPACE="guess"
-"""
+				if line.lstrip().startswith("XKBLAYOUT="):
 
-			# Write via pkexec
+					leading = line[
+						:len(line) - len(line.lstrip())
+					]
+
+					newline = (
+						"\n"
+						if line.endswith("\n")
+						else ""
+					)
+
+					new_lines.append(
+						f'{leading}XKBLAYOUT="{layout_code}"{newline}'
+					)
+
+					layout_updated = True
+
+				else:
+
+					new_lines.append(line)
+
+			# Add XKBLAYOUT if it did not already exist.
+			if not layout_updated:
+
+				new_lines.append(
+					f'XKBLAYOUT="{layout_code}"\n'
+				)
+
+			new_content = "".join(new_lines)
+
+			# Write the preserved configuration via pkexec.
 			result = subprocess.run(
 				[
 					"pkexec",
-					"/bin/sh",
-					"-c",
-					f"cat > /etc/default/keyboard",
+					"/usr/bin/tee",
+					"/etc/default/keyboard",
 				],
 				input=new_content.encode("utf-8"),
 				capture_output=True,
@@ -2907,7 +3054,7 @@ BACKSPACE="guess"
 				result = subprocess.run(
 					["pkexec", "/usr/sbin/chpasswd"],
 					input=password_line,
-					check=True,
+					check=False,
 					capture_output=True,
 				)
 
@@ -2915,9 +3062,38 @@ BACKSPACE="guess"
 					err_msg = result.stderr.decode("utf-8", errors="replace").strip()
 					if not err_msg:
 						err_msg = result.stdout.decode("utf-8", errors="replace").strip()
+
+					# Remove the newly created account if password setup fails.
+					rollback = subprocess.run(
+						[
+							"pkexec",
+							"/usr/sbin/userdel",
+							"-r",
+							username,
+						],
+						check=False,
+						capture_output=True,
+					)
+
+					if rollback.returncode == 0:
+						raise RuntimeError(
+							"The password could not be set. "
+							"The new user account was removed."
+						)
+
+					rollback_err = rollback.stderr.decode(
+						"utf-8",
+						errors="replace",
+					).strip()
+
 					raise RuntimeError(
-						"The user account was created, "
-						f"but setting the password failed: {err_msg}"
+						"The password could not be set, and "
+						"the new user account could not be removed."
+						+ (
+							f" {rollback_err}"
+							if rollback_err
+							else ""
+						)
 					)
 
 				GLib.idle_add(

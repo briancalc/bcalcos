@@ -62,6 +62,7 @@ SysVinit is a mature and well-understood approach to system initialization. It b
 
 For further discussion, see the BcalcOS Community vignettes [SysVinit: System Initialization](https://bcalcos.discourse.group/t/sysvinit-system-initialization/34), and [Living Without systemd](https://bcalcos.discourse.group/t/living-without-systemd/55).
 
+We also have a ~12 part series (WIP)  **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/12 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/12 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/12 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/12 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/12 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), and [6/12 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67). 
 
 ### XLibre
 
