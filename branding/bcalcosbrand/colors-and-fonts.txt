@@ -60,6 +60,7 @@
 
   # Accents
   amber             #EBC978   amber; light-mode warning/note accent
+  deep_red          #8A3025   deep muted red; secondary visual accent
 
 # ------------------------------------------------------------
 # DARK MODE

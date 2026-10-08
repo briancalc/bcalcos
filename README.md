@@ -77,7 +77,7 @@ Devuan is a Debian-derived Linux distribution that maintains compatibility with 
 
 BcalcOS uses SysVinit as its init system; Devuan provides the foundation that makes this choice possible without BcalcOS having to independently remove systemd from a standard Debian installation.
 
-For more background, see the BcalcOS Community vignette [Devuan: The Foundation of BcalcOS](https://bcalcos.discourse.group/t/devuan-the-foundation-of-bcalcos/30).
+For more background, see the BcalcOS Community post [Devuan: The Foundation of BcalcOS](https://bcalcos.discourse.group/t/devuan-the-foundation-of-bcalcos/30).
 
 
 ### SysVinit
@@ -86,7 +86,7 @@ SysVinit is a mature and well-understood approach to system initialization. It b
 
 For further discussion, see the BcalcOS Community vignettes [SysVinit: System Initialization](https://bcalcos.discourse.group/t/sysvinit-system-initialization/34), and [Living Without systemd](https://bcalcos.discourse.group/t/living-without-systemd/55).
 
-We also have a ~12 part series (WIP)  **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/12 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/12 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/12 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/12 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/12 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), and [6/12 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67). 
+We also have a ~12 part series (WIP)  **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which is part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/12 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/12 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/12 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/12 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/12 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), and [6/12 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67). 
 
 ### XLibre
 
@@ -96,7 +96,7 @@ XLibre is a continuation of the X.Org X server and provides continued developmen
 
 BcalcOS uses XLibre because the project considers it a capable and maintainable fit for the desktop system being built.
 
-See the BcalcOS Community vignettes [XLibre:  What is it?](https://bcalcos.discourse.group/t/xlibre-what-is-it/25), [Why BcalcOS Uses XLibre](https://bcalcos.discourse.group/t/why-bcalcos-uses-xlibre/26), and [XLibre:  Things to Know](https://bcalcos.discourse.group/t/xlibre-things-to-know/27) for additional information.
+See the BcalcOS Community topics [XLibre:  What is it?](https://bcalcos.discourse.group/t/xlibre-what-is-it/25), [Why BcalcOS Uses XLibre](https://bcalcos.discourse.group/t/why-bcalcos-uses-xlibre/26), and [XLibre:  Things to Know](https://bcalcos.discourse.group/t/xlibre-things-to-know/27) for additional information.
 
 
 ### SLiM
@@ -114,7 +114,7 @@ BcalcOS uses Xfce as its desktop environment.
 
 Xfce is a mature, modular, and configurable desktop that provides a familiar graphical environment without requiring a large collection of tightly integrated desktop services.
 
-For additional background, see the BcalcOS Community vignette [Xfce:  The BcalcOS Desktop](https://bcalcos.discourse.group/t/xfce-the-bcalcos-desktop/35).
+For additional background, see the BcalcOS Community post [Xfce:  The BcalcOS Desktop](https://bcalcos.discourse.group/t/xfce-the-bcalcos-desktop/35).
 
 ---
 
@@ -160,7 +160,7 @@ These currently include applications and scripts such as:
 
 <img src="readmeimages/readme-quail-system.png" width="400"><br>
 
-For more details, see the BcalcOS Community vignettes [BcalcOS Extra Apps & Packages](https://bcalcos.discourse.group/t/bcalcos-extra-apps-packages/52) and [BcalcOS Maintenance Tools](https://bcalcos.discourse.group/t/bcalcos-maintenance-tools/41).
+For more details, see the BcalcOS Community topics [BcalcOS Extra Apps & Packages](https://bcalcos.discourse.group/t/bcalcos-extra-apps-packages/52) and [BcalcOS Maintenance Tools](https://bcalcos.discourse.group/t/bcalcos-maintenance-tools/41).
 
 ### BcalcOS Repositories
 
@@ -235,11 +235,13 @@ It may be particularly interesting to those who:
 - like Brave Origin as the default browser
 - appreciate the familiar Xfce desktop
 - want a predefined starting point rather than assembling the various components themselves
-- are interested in a small, independently maintained Linux distribution
+- are interested in a distribution which itself has no interest in telemetry
 
 BcalcOS is not intended to be everything to everyone. Users who need applications that require systemd, prefer a rolling-release distribution, or want the latest software versions will likely find that another Linux distribution is a better fit.
 
-The [Why BcalcOS?](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignette provides a philosophical answer to why BcalcOS exists.
+The [Why BcalcOS](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignette provides a philosophical answer to why BcalcOS exists.
+
+The [You Probably Don't Need BcalcOS](https://bcalcos.discourse.group/t/you-probably-dont-need-bcalcos/68) post tackles the Who question in more detail.
 
 ---
 
