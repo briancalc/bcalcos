@@ -34,13 +34,9 @@ BcalcOS is built around complementary ideas: simpler software is usually better,
 
 ## What is BcalcOS?
 
-BcalcOS starts with Devuan and builds its own system on top of it.
+BcalcOS starts with Devuan and then makes its own choices about the components and configuration that form the finished operating system.
 
-Devuan provides the Debian-derived operating system foundation, including the kernel, core system components, security updates, and access to the large Debian software ecosystem.
-
-BcalcOS then makes its own choices about the components and configuration that form the finished desktop.
-
-The result is intended not simply to be a rebrand of the default Devuan installation. BcalcOS defines a particular starting system and adds its own:
+The result is intended not simply to be a rebrand of the default Devuan installation. BcalcOS adds its own:
 
 - system configuration
 - desktop configuration
@@ -73,7 +69,7 @@ BcalcOS is built from a defined set of major system components:
 
 BcalcOS is built on Devuan Excalibur.
 
-Devuan is a Debian-derived Linux distribution that maintains compatibility with the Debian software ecosystem while taking a different approach to system initialization. In particular, Devuan supports alternative init systems to systemd.
+Devuan is a Debian-derived Linux distribution that maintains compatibility with the Debian software ecosystem while taking a different approach to system initialization.  It provides provides the kernel, core system components, and security updates.
 
 BcalcOS uses SysVinit as its init system; Devuan provides the foundation that makes this choice possible without BcalcOS having to independently remove systemd from a standard Debian installation.
 
@@ -86,7 +82,7 @@ SysVinit is a mature and well-understood approach to system initialization. It b
 
 For further discussion, see the BcalcOS Community vignettes [SysVinit: System Initialization](https://bcalcos.discourse.group/t/sysvinit-system-initialization/34), and [Living Without systemd](https://bcalcos.discourse.group/t/living-without-systemd/55).
 
-We also have a ~12 part series (WIP)  **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which is part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/12 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/12 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/12 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/12 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/12 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), and [6/12 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67). 
+We also have a 15 part series **In Depth:  SysVinit** which goes into much more detail. I am not an init expert which is part of the appeal of SysVinit: you aren't required to become a SME to understand it.  [1/15 What is SysVinit?](https://bcalcos.discourse.group/t/what-is-sysvinit/62/2), [2/15 Core Concept:  Runlevels](https://bcalcos.discourse.group/t/core-concept-runlevels/63), [3/15 Core Concept:  Init Scripts](https://bcalcos.discourse.group/t/core-concept-init-scripts/64), [4/15 Core Concept:  Services & Programs](https://bcalcos.discourse.group/t/core-concept-services-programs/65), [5/15 Core Concept:  Runlevel Configuration](https://bcalcos.discourse.group/t/core-concept-runlevel-configuration/66), [6/15 The Boot Process](https://bcalcos.discourse.group/t/the-boot-process/67), [7/15 The SysVinit Configuration Files](https://bcalcos.discourse.group/t/the-sysvinit-configuration-files/69), [8/15 Services and Package Management](https://bcalcos.discourse.group/t/services-and-package-management/70), [9/15 Startup Order and Dependencies](https://bcalcos.discourse.group/t/startup-order-and-dependencies/71), [10/15 Managing Services on BcalcOS](https://bcalcos.discourse.group/t/managing-services-on-bcalcos/72), [11/15 Enabling and Disabling Services at Boot](https://bcalcos.discourse.group/t/enabling-and-disabling-services-at-boot/73), [12/15 When Services Don’t Start](https://bcalcos.discourse.group/t/when-services-dont-start/74), [13/15 Shutting Down: SysVinit’s Other Half](https://bcalcos.discourse.group/t/shutting-down-sysvinits-other-half/75), [14/15 SysVinit and systemd: Different Trade-offs](https://bcalcos.discourse.group/t/sysvinit-and-systemd-different-trade-offs/76), and [15/15 Why BcalcOS Uses SysVinit](https://bcalcos.discourse.group/t/why-bcalcos-uses-sysvinit/77).
 
 ### XLibre
 
@@ -237,7 +233,7 @@ It may be particularly interesting to those who:
 - want a predefined starting point rather than assembling the various components themselves
 - are interested in a distribution which itself has no interest in telemetry
 
-BcalcOS is not intended to be everything to everyone. Users who need applications that require systemd, prefer a rolling-release distribution, or want the latest software versions will likely find that another Linux distribution is a better fit.
+BcalcOS is not intended to be everything to everyone. Users who need applications that require systemd, prefer a rolling-release distribution, or want the latest software versions will find that another Linux distribution is a better fit.
 
 The [Why BcalcOS](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignette provides a philosophical answer to why BcalcOS exists.
 
