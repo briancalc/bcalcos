@@ -101,8 +101,9 @@ BcalcOS uses SLiM as its display manager.
 
 SLiM provides the graphical login screen and starts the user's desktop session. It is intentionally limited in scope: authenticate the user, launch the session, and get out of the way.
 
-See the BcalcOS Community vignette [SLiM: The BcalcOS Display Manager](https://bcalcos.discourse.group/t/slim-the-bcalcos-display-manager/37) for more notes.
+See the BcalcOS Community vignette [SLiM: The BcalcOS Display Manager](https://bcalcos.discourse.group/t/slim-the-bcalcos-display-manager/37) for a general description.
 
+There is a 6 part series **In Depth:  SLiM** which goes into more detail.  [1/6 SLiM?  You Can't be Serious!](https://bcalcos.discourse.group/t/slim-you-cant-be-serious/92), [2/6 SLiM in the Startup Process](https://bcalcos.discourse.group/t/slim-in-the-startup-process/93), [3/6 Understanding SLiM's Configuration](https://bcalcos.discourse.group/t/understanding-slims-configuration/94), [4/6 SLiM:  From Login to Desktop](https://bcalcos.discourse.group/t/slim-from-login-to-desktop/95), [5/6 Troubleshooting Common SLiM Problems](https://bcalcos.discourse.group/t/troubleshooting-common-slim-problems/96), and [6/6 Why BcalcOS Uses SLiM](https://bcalcos.discourse.group/t/why-bcalcos-uses-slim/97).
 
 ### Xfce
 
@@ -131,7 +132,7 @@ BcalcOS includes its own terminal-based installer.
 The installer is designed specifically around the BcalcOS system rather than attempting to support a wide range of possible Linux installation scenarios. This keeps the installation process relatively straightforward and beginner-friendly, but it also means the installer makes defined assumptions and has specific limitations. <br>
 ![BcalcOS Installer](readmeimages/readme-installer.png)<br>
 
-For a much more in depth discussion, see the BcalcOS Community vignettes [BcalcOS Installer:  Design Notes & Trade-offs](https://bcalcos.discourse.group/t/bcalcos-installer-design-notes-trade-offs/19), [BcalcOS Installation Process](https://bcalcos.discourse.group/t/bcalcos-installation-process/20), [Before You Install BcalcOS](https://bcalcos.discourse.group/t/before-you-install-bcalcos/22), [What Happens to the Disk?](https://bcalcos.discourse.group/t/what-happens-to-the-disk-during-installation/23), [Encryption Explained](https://bcalcos.discourse.group/t/encryption-explained/24), [Dual Boot Grub Note](https://bcalcos.discourse.group/t/dual-boot-grub-note/49), and [The BcalcOS Filesystem](https://bcalcos.discourse.group/t/the-bcalcos-filesystem/45).
+For a much more in depth discussion, see the BcalcOS Community posts [BcalcOS Installer:  Design Notes & Trade-offs](https://bcalcos.discourse.group/t/bcalcos-installer-design-notes-trade-offs/19), [BcalcOS Installation Process](https://bcalcos.discourse.group/t/bcalcos-installation-process/20), [Before You Install BcalcOS](https://bcalcos.discourse.group/t/before-you-install-bcalcos/22), [What Happens to the Disk?](https://bcalcos.discourse.group/t/what-happens-to-the-disk-during-installation/23), [Encryption Explained](https://bcalcos.discourse.group/t/encryption-explained/24), [Dual Boot Grub Note](https://bcalcos.discourse.group/t/dual-boot-grub-note/49), and [The BcalcOS Filesystem](https://bcalcos.discourse.group/t/the-bcalcos-filesystem/45).
 
 ### Welcome Center
 
