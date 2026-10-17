@@ -18,7 +18,7 @@ A few simple custom scripts included with BcalcOS Linux.
 
 Location:  /usr/sbin/apt-updates-notify
 
-Daily check around 4pm for APT updates.
+Daily check around 9am and 5pm for APT updates.
 
 Displays desktop notification only; does not install updates.
 

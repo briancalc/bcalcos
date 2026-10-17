@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #qual_calc.py
-#v1.3
+#v1.4
 
 
 import tkinter as tk
@@ -53,6 +53,8 @@ BUTTON_PAD_Y = 4
 # ------------------------------------------------------------
 
 TITLE_FONT_SIZE = 17
+
+APP_VERSION = "1.4"
 
 
 # ============================================================
@@ -322,6 +324,7 @@ class QuailCalculator:
 
             ("0", 4, 0, "number"),
             (".", 4, 1, "decimal"),
+            ("☰", 4, 3, "menu"),
         ]
 
         for text, row, col, kind in buttons:
@@ -339,6 +342,32 @@ class QuailCalculator:
                 padx=BUTTON_PAD_X,
                 pady=BUTTON_PAD_Y
             )
+
+            if kind == "menu":
+                self.menu_button = button
+
+        # A native Tk menu keeps the options simple and lightweight.
+        self.options_menu = tk.Menu(
+            self.root,
+            tearoff=0,
+            bg=COLOR_SURFACE,
+            fg=COLOR_TEXT,
+            activebackground=COLOR_SURFACE_ALT,
+            activeforeground=COLOR_TEXT,
+            relief="flat",
+            borderwidth=1
+        )
+
+        self.options_menu.add_command(
+            label="About",
+            command=self.show_about
+        )
+
+
+        self.options_menu.add_command(
+            label="Close",
+            command=self.root.destroy
+        )
 
     # ========================================================
     # BUTTON CREATION
@@ -383,14 +412,18 @@ class QuailCalculator:
             hover = COLOR_PRIMARY_DARK
             border = COLOR_PRIMARY_DARK
 
+        if kind == "menu":
+            command = self.show_menu
+        else:
+            command = lambda value=text: self.button_pressed(value)
+
         button = tk.Button(
 
             parent,
 
             text=text,
 
-            command=lambda value=text:
-                self.button_pressed(value),
+            command=command,
 
             font=(
                 FONT_PRIMARY,
@@ -433,6 +466,85 @@ class QuailCalculator:
         return button
 
     # ========================================================
+    # HAMBURGER MENU
+    # ========================================================
+
+    def show_menu(self):
+
+        self.root.update_idletasks()
+        self.options_menu.update_idletasks()
+
+        menu_width = self.options_menu.winfo_reqwidth()
+        menu_height = self.options_menu.winfo_reqheight()
+
+        x = (
+            self.menu_button.winfo_rootx()
+            + self.menu_button.winfo_width()
+            - menu_width
+        )
+
+        y = self.menu_button.winfo_rooty() - menu_height - 4
+
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = max(0, min(x, screen_width - menu_width))
+        y = max(0, min(y, screen_height - menu_height))
+
+        try:
+            self.options_menu.tk_popup(x, y)
+        finally:
+            self.options_menu.grab_release()
+
+    def show_about(self):
+
+        about = tk.Toplevel(self.root)
+        about.title("About Quail Calc")
+        about.configure(bg=COLOR_BG)
+        about.transient(self.root)
+        about.resizable(False, False)
+
+        message = tk.Label(
+            about,
+            text=(
+                "Quail Calc\n"
+                "A simple desktop calculator.\n\n"
+                f"Version {APP_VERSION}\n"
+                "Part of the BcalcOS project."
+            ),
+            bg=COLOR_BG,
+            fg=COLOR_TEXT,
+            justify="left",
+            padx=24,
+            pady=20
+        )
+        message.pack()
+
+        ok_button = tk.Button(
+            about,
+            text="OK",
+            command=about.destroy
+        )
+        ok_button.pack(pady=(0, 14))
+
+        about.update_idletasks()
+
+        x = self.root.winfo_rootx() + (
+            self.root.winfo_width() - about.winfo_width()
+        ) // 2
+
+        y = self.root.winfo_rooty() + (
+            self.root.winfo_height() - about.winfo_height()
+        ) // 2
+
+        about.geometry(f"+{x}+{y}")
+
+        about.grab_set()
+        ok_button.focus_set()
+
+        about.bind("<Escape>", lambda event: about.destroy())
+        about.bind("<Return>", lambda event: about.destroy())
+
+    # ========================================================
     # BUTTON HOVER
     # ========================================================
 
@@ -464,7 +576,10 @@ class QuailCalculator:
         char = event.char
         key = event.keysym
 
-        if char in "0123456789":
+        # Tk reports an empty event.char for non-text keys.
+        # In Python, an empty string is considered contained in every
+        # string, so guard against it before checking for digits.
+        if char and char in "0123456789":
 
             self.enter_number(char)
 
@@ -664,9 +779,14 @@ class QuailCalculator:
 
             try:
 
-                self.perform_calculation(
+                # Use the intermediate result as the next accumulator.
+                # Without this assignment, 1 + 2 + 3 would incorrectly
+                # calculate 1 + 3 instead of 3 + 3.
+                result = self.perform_calculation(
                     current
                 )
+                if result is not None:
+                    self.first_number = result
 
             except ZeroDivisionError:
 
@@ -779,6 +899,7 @@ class QuailCalculator:
         )
 
         self.update_display()
+        return result
 
     # ========================================================
     # CLEAR
@@ -919,20 +1040,30 @@ class QuailCalculator:
             ".12g"
         )
 
-        # Convert scientific notation to ordinary notation
-        # when reasonable.
+        # Convert scientific notation to ordinary notation without
+        # truncating results smaller than 1e-12 to zero. Expanding the
+        # already-rounded 12-significant-digit string preserves the
+        # intended display precision.
         if "e" in result.lower():
 
             try:
 
                 result = format(
-                    number,
-                    ".12f"
-                ).rstrip("0").rstrip(".")
+                    Decimal(result),
+                    "f"
+                )
 
-            except Exception:
+                if "." in result:
+                    result = result.rstrip("0").rstrip(".")
+
+            except (InvalidOperation, ValueError):
 
                 pass
+
+        # Avoid displaying unnecessary decimal zeroes (for example,
+        # show 15 instead of 15.00 after adding decimal operands).
+        if "." in result and "e" not in result.lower():
+            result = result.rstrip("0").rstrip(".")
 
         # Always preserve leading zero.
         if result.startswith("."):

@@ -1,7 +1,7 @@
 #!/bin/sh
 #apt-updates-notify
 #daily check for updates
-#v1.3
+#v1.4
 #
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
@@ -16,8 +16,22 @@ notify_user() {
 
     [ -S "$bus" ] || return
 
+    # Play the notification chime when available.
+    if command -v paplay >/dev/null 2>&1 &&
+       [ -r /usr/share/sounds/freedesktop/stereo/message.oga ]; then
+        su - "$u" -c "env XDG_RUNTIME_DIR='$runtime' paplay /usr/share/sounds/freedesktop/stereo/message.oga" 2>/dev/null
+    fi
+
+    # Send the desktop notification.
     su - "$u" -c "env XDG_RUNTIME_DIR='$runtime' DBUS_SESSION_BUS_ADDRESS='unix:path=$bus' notify-send -u normal '$title' '$body'" 2>/dev/null
 }
+
+# Refresh package lists before checking for upgrades.
+if ! apt-get update -qq >/dev/null 2>&1; then
+    logger -t apt-updates-notify \
+        "APT package-list refresh failed; skipping update notification."
+    exit 1
+fi
 
 logged_in_users=$(who | awk '{print $1}' | sort -u)
 [ -n "$logged_in_users" ] || exit 0

@@ -1,4 +1,4 @@
 SHELL=/bin/sh
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
-0 16 * * * root /usr/sbin/apt-updates-notify
+0 9,17 * * * root /usr/sbin/apt-updates-notify
