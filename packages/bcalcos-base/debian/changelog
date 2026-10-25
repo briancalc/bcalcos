@@ -1,3 +1,10 @@
+bcalcos-base (1.3-8) bobwhite; urgency=medium
+
+  * Welcome Center:  updated main window layout and added new applications
+  * Installer:  replaced terminal with GUI user interface; no changes to underlying installer actions
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Sun, 25 Oct 2026 00:00:00 +0000
+
 bcalcos-base (1.3-7) bobwhite; urgency=medium
 
   * Quail Calc: fix chained arithmetic and add hamburger menu

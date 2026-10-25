@@ -103,7 +103,7 @@ SLiM provides the graphical login screen and starts the user's desktop session. 
 
 See the BcalcOS Community vignette [SLiM: The BcalcOS Display Manager](https://bcalcos.discourse.group/t/slim-the-bcalcos-display-manager/37) for a general description.
 
-There is a 6 part series **In Depth:  SLiM** which goes into more detail.  [1/6 SLiM?  You Can't be Serious!](https://bcalcos.discourse.group/t/slim-you-cant-be-serious/92), [2/6 SLiM in the Startup Process](https://bcalcos.discourse.group/t/slim-in-the-startup-process/93), [3/6 Understanding SLiM's Configuration](https://bcalcos.discourse.group/t/understanding-slims-configuration/94), [4/6 SLiM:  From Login to Desktop](https://bcalcos.discourse.group/t/slim-from-login-to-desktop/95), [5/6 Troubleshooting Common SLiM Problems](https://bcalcos.discourse.group/t/troubleshooting-common-slim-problems/96), and [6/6 Why BcalcOS Uses SLiM](https://bcalcos.discourse.group/t/why-bcalcos-uses-slim/97).
+There is a 6 part series **In Depth:  SLiM** which goes into more detail.  [1/6 SLiM?  You Cannot be Serious!](https://bcalcos.discourse.group/t/slim-you-cant-be-serious/92), [2/6 SLiM in the Startup Process](https://bcalcos.discourse.group/t/slim-in-the-startup-process/93), [3/6 Understanding SLiM's Configuration](https://bcalcos.discourse.group/t/understanding-slims-configuration/94), [4/6 SLiM:  From Login to Desktop](https://bcalcos.discourse.group/t/slim-from-login-to-desktop/95), [5/6 Troubleshooting Common SLiM Problems](https://bcalcos.discourse.group/t/troubleshooting-common-slim-problems/96), and [6/6 Why BcalcOS Uses SLiM](https://bcalcos.discourse.group/t/why-bcalcos-uses-slim/97).
 
 ### Xfce
 

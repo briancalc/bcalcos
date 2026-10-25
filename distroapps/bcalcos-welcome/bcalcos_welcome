@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
 BcalcOS Welcome Center
-v1.3.2
+v1.4
 
-New Feature(s):
-- hamburger help menu
-- user can select light (default) or dark mode
+Features:
+- category sidebar and two-column application cards
+- launch, install, and separate removal controls
+- application icons from installed desktop entries when available
+- light and dark BcalcOS themes
 """
 
 import os
@@ -14,8 +16,11 @@ import subprocess
 import threading
 import sys
 
-sys.path.insert(0, '/usr/lib/bcalcos-welcome')
-from bcalcos_wel_detect import detect_all_statuses, PACKAGE_MAP, DOCS_URLS
+if '/usr/lib/bcalcos-welcome' not in sys.path:
+	sys.path.append('/usr/lib/bcalcos-welcome')
+from bcalcos_wel_detect import (
+	detect_all_statuses, PACKAGE_MAP, DOCS_URLS, NOT_REMOVABLE, SYSTEM_ACTIONS,
+)
 
 import gi
 
@@ -23,7 +28,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
 
-from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Pango
+from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Pango, Gio
 
 
 # ============================================================
@@ -44,50 +49,88 @@ ICON_HEIGHT = 641
 # APPLICATION CONFIGURATION
 # ============================================================
 
+# Keep these display names synchronized with PACKAGE_MAP and DOCS_URLS in
+# bcalcos_wel_detect.py.
 APPS_CONFIG = {
-	"Office": [
-		("Gnumeric", None),
-		("AbiWord", None),
-		("LibreOffice", None),
-		("Screenshot", None),
-		("MousePad", None),
-		("QOwnNotes", None),
-		("Atril", None),
-		("PDF Arranger", None),
-	],
-
-	"Multimedia": [
-		("GIMP", None),
-		("OBS Studio", None),
-		("VLC", None),
-		("Audacity", None),
-		("mtpaint", None),
-		("Flacon", None),
-		("Inkscape", None),
-		("Darktable", None),
-	],
-
-	"System": [
-		("GParted", None),
-		("BackinTime", None),
-		("KeePassXC", None),
-		("gocryptfs", None),
-		("Settings", None),
-		("ClamAV", None),
-		("WireGuard", None),
-		("Task Manager", None),
-	],
-
-	"Sundries": [
-		("Run Updates", None),
-		("Keyboard Layout", None),
-		("Create New User", None),
-		("AisleRiot", None),
-		("AppArmor Userdoc", None),
-		("WireGuard Quick Start", None),
-		("UFW Help Wiki", None),
-		("ClamAV Userdoc", None),
-	],
+    "Office": [
+        ("Gnumeric", None),
+        ("AbiWord", None),
+        ("LibreOffice", None),
+        ("QOwnNotes", None),
+        ("Atril", None),
+        ("PDF Arranger", None),
+        ("Xournal++", None),
+    ],
+    "Communications": [
+        ("Brave Origin", None),
+        ("Claws Mail", None),
+    ],
+    "Graphics": [
+        ("GIMP", None),
+        ("mtPaint", None),
+        ("Inkscape", None),
+        ("Darktable", None),
+        ("XSane", None),
+    ],
+    "Media": [
+        ("VLC", None),
+        ("Audacity", None),
+        ("OBS Studio", None),
+        ("Flacon", None),
+        ("HandBrake", None),
+        ("Ex Falso", None),
+        ("Quod Libet", None),
+        ("Xfburn", None),
+    ],
+    "Files": [
+        ("BackInTime", None),
+        ("Grsync", None),
+        ("Midnight Commander", None),
+    ],
+    "Security": [
+        ("KeePassXC", None),
+        ("gocryptfs", None),
+        ("ClamAV", None),
+        ("WireGuard", None),
+    ],
+    "System": [
+        ("GParted", None),
+        ("Task Manager", None),
+        ("htop", None),
+        ("Xterm", None),
+        ("Settings", None),
+        ("Run Updates", None),
+        ("Create New User", None),
+        ("Keyboard Layout", None),
+        ("Quail System", None),
+    ],
+    "Accessories": [
+        ("Screenshot", None),
+        ("MousePad", None),
+        ("Xfce Clipman", None),
+        ("Quail Calc", None),
+        ("Quail Converter", None),
+        ("Quail Reminder", None),
+    ],
+    "Development": [
+        ("Geany", None),
+        ("Meld", None),
+        ("Vim", None),
+    ],
+    "Games": [
+        ("AisleRiot", None),
+    ],
+    "Knowledge": [
+        ("BcalcOS Website", None),
+        ("BcalcOS Repository", None),
+        ("Updating BcalcOS", None),
+        ("Creating a Regular User Account", None),
+        ("The Firewall: UFW", None),
+        ("AppArmor: App Security", None),
+        ("ClamAV: Scanning Your Home Folder", None),
+        ("gocryptfs: Protecting Your Files", None),
+        ("Grsync: Backing Up Your Files", None),
+    ],
 }
 
 #####add keyboard selection support####
@@ -136,6 +179,7 @@ LIGHT_PALETTE = {
 	"installed":      "#2E8B57",
 	"installed_bg":   "#EEF8F2",
 	"remove":         "#2C3E50",
+	"deep_red":       "#8A3025",
 
 	# States
 	"disabled":            "#F0F1F2",
@@ -172,6 +216,7 @@ DARK_PALETTE = {
 	"installed":      "#5AB07E",   # luminous jade
 	"installed_bg":   "#1F3329",   # deep forest
 	"remove":         "#F3EEE4",   # follows text
+	"deep_red":       "#8A3025",
 
 	# States
 	"disabled":            "#2E2A23",
@@ -196,44 +241,205 @@ SPLASH_PALETTE = {
 LIGHT_PALETTE.update(SPLASH_PALETTE)
 DARK_PALETTE.update(SPLASH_PALETTE)
 # ============================================================
-# ICONS
+# ICONS, LAUNCH COMMANDS, AND SPECIAL LINKS
 # ============================================================
 
-ICON_NAMES = {
-	"Gnumeric": "x-office-spreadsheet-symbolic",
-	"AbiWord": "x-office-document-symbolic",
-	"LibreOffice": "x-office-document",
-	"QOwnNotes": "accessories-text-editor-symbolic",
-	"Atril": "x-office-document-symbolic",
-	"PDF Arranger": "view-paged-symbolic",
-	"Screenshot": "camera-photo-symbolic",
-	"MousePad": "accessories-text-editor-symbolic",
-	"GIMP": "applications-graphics-symbolic",
-	"mtpaint": "applications-graphics-symbolic",
-	"Flacon": "audio-x-generic-symbolic",
-	"Inkscape": "applications-graphics-symbolic",
-	"Darktable": "camera-photo-symbolic",
-	"OBS Studio": "camera-web-symbolic",
-	"VLC": "multimedia-player-symbolic",
-	"Audacity": "multimedia-player-symbolic",
-	"Run Updates": "system-software-update-symbolic",
-	"Create New User": "system-users-symbolic",
-	"GParted": "drive-harddisk-symbolic",
-	"BackinTime": "document-save-symbolic",
-	"KeePassXC": "dialog-password-symbolic",
-	"gocryptfs": "changes-allow-symbolic",
-	"Keyboard Layout": "input-keyboard-symbolic",
-	"Settings": "preferences-system-symbolic",
-	"ClamAV": "security-high-symbolic",
-	"WireGuard": "network-vpn-symbolic",
-	"BcalcOS Website": "help-browser-symbolic",
-	"AisleRiot": "applications-games-symbolic",
-	"AppArmor Userdoc": "security-high-symbolic",
-	"WireGuard Quick Start": "network-server-symbolic",
-	"Task Manager": "utilities-system-monitor-symbolic",
-	"UFW Help Wiki": "network-transmit-receive-symbolic",
-	"ClamAV Userdoc": "dialog-warning-symbolic",
+CATEGORY_ICON_NAMES = {
+    "Office": ("x-office-document-symbolic", "x-office-document", "applications-office-symbolic"),
+    "Communications": ("mail-send-symbolic", "internet-mail-symbolic", "applications-internet-symbolic"),
+    "Graphics": ("applications-graphics-symbolic", "applications-graphics"),
+    "Media": ("audio-x-generic-symbolic", "multimedia-player-symbolic", "applications-multimedia-symbolic"),
+    "Files": ("folder-symbolic", "folder", "system-file-manager"),
+    "Security": ("security-high-symbolic", "changes-allow-symbolic", "security-high"),
+    "System": ("preferences-system-symbolic", "applications-system-symbolic", "preferences-system"),
+    "Accessories": ("applications-utilities-symbolic", "utilities-desktop-symbolic", "applications-other-symbolic"),
+    "Development": ("applications-development-symbolic", "applications-development"),
+    "Games": ("applications-games-symbolic", "applications-games"),
+    "Knowledge": ("help-browser-symbolic", "help-browser", "dialog-information-symbolic"),
 }
+
+# UI labels can differ from stable internal category keys.
+CATEGORY_DISPLAY_NAMES = {
+    "Knowledge": "More You Know",
+}
+
+# Symbolic fallbacks are used only when an installed desktop entry/icon cannot
+# be found through the active Quail Icons theme and its normal inheritance.
+ICON_NAMES = {
+    "Gnumeric": "x-office-spreadsheet-symbolic",
+    "AbiWord": "x-office-document-symbolic",
+    "LibreOffice": "x-office-document-symbolic",
+    "QOwnNotes": "accessories-text-editor-symbolic",
+    "Atril": "x-office-document-symbolic",
+    "PDF Arranger": "view-paged-symbolic",
+    "Xournal++": "x-office-drawing-symbolic",
+    "Brave Origin": "web-browser-symbolic",
+    "Claws Mail": "internet-mail-symbolic",
+    "GIMP": "applications-graphics-symbolic",
+    "mtPaint": "applications-graphics-symbolic",
+    "Inkscape": "applications-graphics-symbolic",
+    "Darktable": "camera-photo-symbolic",
+    "XSane": "scanner-symbolic",
+    "VLC": "multimedia-player-symbolic",
+    "Audacity": "audio-x-generic-symbolic",
+    "OBS Studio": "camera-web-symbolic",
+    "Flacon": "audio-x-generic-symbolic",
+    "HandBrake": "media-optical-symbolic",
+    "Ex Falso": "audio-x-generic-symbolic",
+    "Quod Libet": "audio-x-generic-symbolic",
+    "Xfburn": "media-optical-burn-symbolic",
+    "BackInTime": "document-save-symbolic",
+    "Grsync": "document-save-symbolic",
+    "Midnight Commander": "utilities-terminal-symbolic",
+    "KeePassXC": "dialog-password-symbolic",
+    "gocryptfs": "changes-allow-symbolic",
+    "ClamAV": "security-high-symbolic",
+    "WireGuard": "network-vpn-symbolic",
+    "GParted": "drive-harddisk-symbolic",
+    "Task Manager": "utilities-system-monitor-symbolic",
+    "htop": "utilities-system-monitor-symbolic",
+    "Xterm": "utilities-terminal-symbolic",
+    "Settings": "preferences-system-symbolic",
+    "Run Updates": "system-software-update-symbolic",
+    "Create New User": "system-users-symbolic",
+    "Keyboard Layout": "input-keyboard-symbolic",
+    "Quail System": "preferences-system-symbolic",
+    "Screenshot": "camera-photo-symbolic",
+    "MousePad": "accessories-text-editor-symbolic",
+    "Xfce Clipman": "edit-copy-symbolic",
+    "Quail Calc": "x-office-spreadsheet-symbolic",
+    "Quail Converter": "accessories-calculator-symbolic",
+    "Quail Reminder": "appointment-soon-symbolic",
+    "Geany": "accessories-text-editor-symbolic",
+    "Meld": "applications-development-symbolic",
+    "Vim": "accessories-text-editor-symbolic",
+    "AisleRiot": "applications-games-symbolic",
+    "BcalcOS Website": "help-browser-symbolic",
+    "BcalcOS Repository": "applications-development-symbolic",
+    "Updating BcalcOS": "system-software-update-symbolic",
+    "Creating a Regular User Account": "system-users-symbolic",
+    "The Firewall: UFW": "security-high-symbolic",
+    "AppArmor: App Security": "security-high-symbolic",
+    "ClamAV: Scanning Your Home Folder": "security-high-symbolic",
+    "gocryptfs: Protecting Your Files": "changes-allow-symbolic",
+    "Grsync: Backing Up Your Files": "document-save-symbolic",
+}
+
+# The security applications are intentionally linked to guidance rather than
+# launching a command-line program without context.
+GUIDE_URLS = {
+    "gocryptfs": DOCS_URLS["gocryptfs: Protecting Your Files"],
+    "ClamAV": DOCS_URLS["ClamAV: Scanning Your Home Folder"],
+    "WireGuard": "https://www.wireguard.com/quickstart/",
+}
+
+# Terminal applications open with the requested program already running.
+TERMINAL_LAUNCH_COMMANDS = {
+    "htop": ["xfce4-terminal", "-e", "htop"],
+    "Vim": ["xfce4-terminal", "-e", "vim"],
+    "Midnight Commander": ["xfce4-terminal", "-e", "mc"],
+}
+
+# Fallback executables are used when no matching desktop entry is available.
+# Brave Origin's %U desktop field code is deliberately not passed to Popen;
+# when its desktop entry is found, Gio handles that field correctly.
+FALLBACK_EXECUTABLES = {
+    "Gnumeric": "gnumeric",
+    "AbiWord": "abiword",
+    "LibreOffice": "libreoffice",
+    "QOwnNotes": "qownnotes",
+    "Atril": "atril",
+    "PDF Arranger": "pdfarranger",
+    "Xournal++": "xournalpp",
+    "Brave Origin": "/usr/bin/brave-origin-stable",
+    "Claws Mail": "claws-mail",
+    "GIMP": "gimp",
+    "mtPaint": "mtpaint",
+    "Inkscape": "inkscape",
+    "Darktable": "darktable",
+    "XSane": "xsane",
+    "VLC": "vlc",
+    "Audacity": "audacity",
+    "OBS Studio": "obs",
+    "Flacon": "flacon",
+    "HandBrake": "ghb",
+    "Ex Falso": "exfalso",
+    "Quod Libet": "quodlibet",
+    "Xfburn": "xfburn",
+    "BackInTime": "backintime-qt",
+    "Grsync": "grsync",
+    "KeePassXC": "keepassxc",
+    "GParted": "gparted",
+    "Task Manager": "xfce4-taskmanager",
+    "Xterm": "xterm",
+    "Screenshot": "xfce4-screenshooter",
+    "MousePad": "mousepad",
+    "Xfce Clipman": "xfce4-clipman",
+    "Quail Calc": "/usr/bin/quail_calc",
+    "Quail Converter": "/usr/bin/quail-converter",
+    "Quail Reminder": "/usr/bin/quail-reminder",
+    "Quail System": "/usr/bin/quail-system",
+    "Geany": "geany",
+    "Meld": "meld",
+    "AisleRiot": "sol",
+}
+
+# Display names vary slightly across desktop environments and package builds.
+DESKTOP_NAME_ALIASES = {
+    "LibreOffice": ("LibreOffice", "LibreOffice Start Center"),
+    "BackInTime": ("Back In Time", "BackInTime"),
+    "Task Manager": ("Task Manager", "Xfce Task Manager"),
+    "AisleRiot": ("AisleRiot", "Aisleriot", "Aisleriot Solitaire"),
+    "Xfce Clipman": ("Xfce Clipman", "Clipman"),
+    "Brave Origin": ("Brave Origin",),
+}
+
+# Additional desktop-entry executable names for entries whose visible name
+# differs between desktop environments or package versions.
+DESKTOP_EXECUTABLE_ALIASES = {
+    "Gnumeric": ("gnumeric",),
+    "AbiWord": ("abiword",),
+    "LibreOffice": ("libreoffice", "soffice"),
+    "QOwnNotes": ("qownnotes",),
+    "Atril": ("atril",),
+    "PDF Arranger": ("pdfarranger",),
+    "Xournal++": ("xournalpp",),
+    "Brave Origin": ("brave-origin-stable",),
+    "Claws Mail": ("claws-mail",),
+    "GIMP": ("gimp",),
+    "mtPaint": ("mtpaint",),
+    "Inkscape": ("inkscape",),
+    "Darktable": ("darktable",),
+    "XSane": ("xsane",),
+    "VLC": ("vlc",),
+    "Audacity": ("audacity",),
+    "OBS Studio": ("obs",),
+    "Flacon": ("flacon",),
+    "HandBrake": ("ghb",),
+    "Ex Falso": ("exfalso",),
+    "Quod Libet": ("quodlibet",),
+    "Xfburn": ("xfburn",),
+    "BackInTime": ("backintime-qt", "backintime"),
+    "Grsync": ("grsync",),
+    "KeePassXC": ("keepassxc",),
+    "GParted": ("gparted",),
+    "Task Manager": ("xfce4-taskmanager",),
+    "Xterm": ("xterm",),
+    "Screenshot": ("xfce4-screenshooter",),
+    "MousePad": ("mousepad",),
+    "Xfce Clipman": ("xfce4-clipman",),
+    "Quail Calc": ("quail_calc",),
+    "Quail Converter": ("quail-converter",),
+    "Quail Reminder": ("quail-reminder",),
+    "Quail System": ("quail-system",),
+    "Geany": ("geany",),
+    "Meld": ("meld",),
+    "AisleRiot": ("sol", "aisleriot"),
+}
+
+
+def _normalise_app_label(value):
+    return "".join(character.casefold() for character in value if character.isalnum())
 
 
 # ============================================================
@@ -402,6 +608,211 @@ window {{
 	background-color: transparent;
 }}
 
+/* ---- Two-pane Welcome Center ---- */
+
+.welcome-layout {{
+	background-color: {bg};
+}}
+
+.sidebar {{
+	background-color: {surface_alt};
+	border-right: 1px solid {border};
+	padding: 18px 10px;
+}}
+
+.sidebar-brand {{
+	color: {primary_dark};
+	font-family: Poppins, sans-serif;
+	font-size: 22px;
+	font-weight: 700;
+	padding: 6px 12px 14px 12px;
+}}
+
+.sidebar-section-label {{
+	color: {text_muted};
+	font-family: Inter, sans-serif;
+	font-size: 23px;
+	font-weight: 700;
+	padding: 8px 12px 6px 12px;
+}}
+
+.sidebar-category-button {{
+	background-color: transparent;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	padding: 0;
+	min-height: 48px;
+	color: {text};
+}}
+
+.sidebar-category-button:hover {{
+	background-color: {button_hover};
+	border-color: {border_gold};
+}}
+
+.sidebar-category-button.active-category {{
+	background-color: {surface};
+	border-color: {border_gold};
+}}
+
+.sidebar-category-accent {{
+	background-color: transparent;
+	min-width: 4px;
+	border-radius: 2px;
+}}
+
+.sidebar-category-button.active-category .sidebar-category-accent {{
+	background-color: {primary_dark};
+}}
+
+.sidebar-category-icon {{
+	color: {primary_dark};
+}}
+
+.sidebar-category-button.active-category .sidebar-category-icon {{
+	color: {primary_dark};
+}}
+
+.sidebar-category-label {{
+	color: {text};
+	font-family: Inter, sans-serif;
+	font-size: 21px;
+	font-weight: 600;
+}}
+
+.main-pane {{
+	background-color: {bg};
+	padding: 26px 28px 18px 28px;
+}}
+
+.category-title {{
+	color: {primary_dark};
+	font-family: Poppins, sans-serif;
+	font-size: 30px;
+	font-weight: 700;
+}}
+
+.category-subtitle {{
+	color: {text_muted};
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+}}
+
+.footer {{
+	color: {text_light};
+	font-family: Inter, sans-serif;
+	font-size: 18px;
+}}
+
+.category-title-accent {{
+	background-color: {primary};
+	min-height: 4px;
+	min-width: 240px;
+	border-radius: 2px;
+}}
+
+.app-card {{
+	background-color: {surface};
+	border: 1px solid {border};
+	border-radius: 12px;
+	min-height: 92px;
+}}
+
+.app-card:hover {{
+	border-color: {border_gold};
+}}
+
+.app-card.pointer-hover {{
+	border: 2px solid {border_gold};
+}}
+
+.app-main-button {{
+	background-color: transparent;
+	border: none;
+	border-radius: 10px;
+	padding: 12px;
+	min-height: 90px;
+	color: {text};
+}}
+
+.app-main-button:hover {{
+	background-color: {button_hover};
+}}
+
+.app-main-button:active {{
+	background-color: {button_active};
+}}
+
+.app-main-button:disabled {{
+	background-color: {disabled};
+	color: {text_light};
+}}
+
+.app-icon-box {{
+	background-color: {icon_box_bg};
+	border: 1px solid {icon_box_border};
+	border-radius: 10px;
+	min-width: 46px;
+	min-height: 46px;
+}}
+
+.app-icon-fallback {{
+	color: {primary_dark};
+}}
+
+.app-name {{
+	color: {text};
+	font-family: Inter, sans-serif;
+	font-size: 20px;
+	font-weight: 600;
+}}
+
+.app-status {{
+	color: {text_muted};
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+}}
+
+.app-status-installed {{
+	color: {installed};
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+	font-weight: 600;
+}}
+
+.app-status-install {{
+	color: {primary};
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+	font-weight: 600;
+}}
+
+.app-status-action {{
+	color: {text_muted};
+	font-family: Inter, sans-serif;
+	font-size: 16px;
+}}
+
+.app-remove-button {{
+	background-color: transparent;
+	border: none;
+	border-radius: 8px;
+	color: {deep_red};
+	font-family: Inter, sans-serif;
+	font-size: 30px;
+	font-weight: 700;
+	padding: 0 10px;
+	min-width: 36px;
+}}
+
+.app-remove-button:hover {{
+	background-color: {button_active};
+}}
+
+.app-remove-button:disabled {{
+	color: {text_light};
+}}
+
 /* ---- Splash: colors are locked identical in both palettes ---- */
 
 .splash-window {{
@@ -516,7 +927,7 @@ class SplashScreen(Gtk.Window):
 
 		self.parent_app = parent_app
 		self.elapsed = 0.0
-		self.duration = 6.0
+		self.duration = 4.0
 
 		self.set_decorated(False)
 		self.set_resizable(False)
@@ -793,8 +1204,12 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		self.installed_status = detect_all_statuses(APPS_CONFIG)
-
 		self.app_buttons = {}
+		self.category_buttons = {}
+		self.current_category = "Office"
+		self.desktop_app_info_cache = {}
+		self.app_container = None
+		self.category_title_label = None
 
 		self._build_ui()
 
@@ -803,47 +1218,31 @@ class WelcomeApp(Gtk.Window):
 	# ========================================================
 
 	def _build_ui(self):
-
-		outer = Gtk.Box(
+		# Keep the original full-width Welcome Center header above the
+		# redesigned two-pane content area.
+		root = Gtk.Box(
 			orientation=Gtk.Orientation.VERTICAL,
 			spacing=18,
 		)
-
-		outer.set_margin_start(28)
-		outer.set_margin_end(28)
-		outer.set_margin_top(24)
-		outer.set_margin_bottom(20)
-
-		self.add(outer)
-
-		# ----------------------------------------------------
-		# Header
-		# ----------------------------------------------------
+		root.set_margin_start(28)
+		root.set_margin_end(28)
+		root.set_margin_top(24)
+		root.set_margin_bottom(20)
+		root.get_style_context().add_class("welcome-layout")
+		self.add(root)
 
 		header_panel = Gtk.Box(
 			orientation=Gtk.Orientation.HORIZONTAL,
 			spacing=18,
 		)
-
 		header_panel.set_halign(Gtk.Align.FILL)
-		header_panel.get_style_context().add_class(
-			"header-panel"
-		)
+		header_panel.get_style_context().add_class("header-panel")
 
 		accent = Gtk.Box()
 		accent.set_size_request(5, -1)
-		accent.get_style_context().add_class(
-			"header-accent"
-		)
+		accent.get_style_context().add_class("header-accent")
+		header_panel.pack_start(accent, False, False, 0)
 
-		header_panel.pack_start(
-			accent,
-			False,
-			False,
-			0,
-		)
-
-		# Small brand icon
 		try:
 			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
 				ICON_PATH,
@@ -851,809 +1250,513 @@ class WelcomeApp(Gtk.Window):
 				82,
 				True,
 			)
-
-			brand_image = Gtk.Image.new_from_pixbuf(
-				pixbuf
-			)
-
+			brand_image = Gtk.Image.new_from_pixbuf(pixbuf)
 		except Exception:
 			brand_image = Gtk.Image.new_from_icon_name(
 				"computer-symbolic",
 				Gtk.IconSize.DIALOG,
 			)
-
-		header_panel.pack_start(
-			brand_image,
-			False,
-			False,
-			0,
-		)
+		header_panel.pack_start(brand_image, False, False, 0)
 
 		title_box = Gtk.Box(
 			orientation=Gtk.Orientation.VERTICAL,
 			spacing=2,
 		)
-
-		brand = Gtk.Label(
-			label="BcalcOS Welcome Center"
-		)
-
+		brand = Gtk.Label(label="BcalcOS Welcome Center")
 		brand.set_halign(Gtk.Align.START)
-		brand.get_style_context().add_class(
-			"brand-name"
-		)
-
+		brand.get_style_context().add_class("brand-name")
 		brand_subtitle = Gtk.Label(
 			label="Within a socialist community there is no room left for freedom. - LvM"
 		)
-
 		brand_subtitle.set_halign(Gtk.Align.START)
-		brand_subtitle.get_style_context().add_class(
-			"brand-subtitle"
+		brand_subtitle.get_style_context().add_class("brand-subtitle")
+		title_box.pack_start(brand, False, False, 0)
+		title_box.pack_start(brand_subtitle, False, False, 0)
+		header_panel.pack_start(title_box, False, False, 0)
+		root.pack_start(header_panel, False, False, 0)
+
+		# The content row contains the fixed sidebar and the category pane.
+		content_root = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=0,
 		)
+		content_root.set_hexpand(True)
+		content_root.set_vexpand(True)
+		root.pack_start(content_root, True, True, 0)
 
-		title_box.pack_start(
-			brand,
-			False,
-			False,
-			0,
-		)
-
-		title_box.pack_start(
-			brand_subtitle,
-			False,
-			False,
-			0,
-		)
-
-		header_panel.pack_start(
-			title_box,
-			False,
-			False,
-			0,
-		)
-
-		outer.pack_start(
-			header_panel,
-			False,
-			False,
-			0,
-		)
-
-		# ----------------------------------------------------
-		# ----------------------------------------------------
-		# RESOURCES heading
-		# ----------------------------------------------------
-
-		title_section = Gtk.Box(
+		# Fixed-width category sidebar; it is not a draggable pane.
+		sidebar = Gtk.Box(
 			orientation=Gtk.Orientation.VERTICAL,
-			spacing=4,
+			spacing=6,
 		)
+		sidebar.set_size_request(280, -1)
+		sidebar.set_hexpand(False)
+		sidebar.set_halign(Gtk.Align.START)
+		sidebar.set_vexpand(True)
+		sidebar.get_style_context().add_class("sidebar")
+		content_root.pack_start(sidebar, False, False, 0)
 
-		applications_title = Gtk.Label(
-			label="RESOURCES"
+		section_label = Gtk.Label(label="CATEGORIES")
+		section_label.set_halign(Gtk.Align.START)
+		section_label.set_xalign(0)
+		section_label.get_style_context().add_class("sidebar-section-label")
+		sidebar.pack_start(section_label, False, False, 0)
+
+		for category_name in APPS_CONFIG:
+			row_button = self._create_category_button(category_name)
+			sidebar.pack_start(row_button, False, False, 0)
+			self.category_buttons[category_name] = row_button
+
+		spacer = Gtk.Box()
+		spacer.set_vexpand(True)
+		sidebar.pack_start(spacer, True, True, 0)
+
+		# Main pane: a category heading and a two-column scrolling card grid.
+		main_pane = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=14,
 		)
+		main_pane.set_hexpand(True)
+		main_pane.set_vexpand(True)
+		main_pane.get_style_context().add_class("main-pane")
+		content_root.pack_start(main_pane, True, True, 0)
 
-		applications_title.set_halign(
-			Gtk.Align.START
+		title_box = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL,
+			spacing=5,
 		)
+		title_box.set_halign(Gtk.Align.FILL)
 
-		applications_title.get_style_context().add_class(
-			"applications-title"
-		)
+		self.category_title_label = Gtk.Label(label="Office")
+		self.category_title_label.set_halign(Gtk.Align.START)
+		self.category_title_label.set_xalign(0)
+		self.category_title_label.get_style_context().add_class("category-title")
+		title_box.pack_start(self.category_title_label, False, False, 0)
 
-		title_section.pack_start(
-			applications_title,
-			False,
-			False,
-			0,
-		)
+		accent = Gtk.Box()
+		accent.set_size_request(240, 4)
+		accent.set_halign(Gtk.Align.START)
+		accent.get_style_context().add_class("category-title-accent")
+		title_box.pack_start(accent, False, False, 0)
 
-		applications_subtitle = Gtk.Label(
-			label="Choose applications and tools to get started."
-		)
-
-		applications_subtitle.set_halign(
-			Gtk.Align.START
-		)
-
-		applications_subtitle.get_style_context().add_class(
-			"applications-subtitle"
-		)
-
-		title_section.pack_start(
-			applications_subtitle,
-			False,
-			False,
-			0,
-		)
-
-		outer.pack_start(
-			title_section,
-			False,
-			False,
-			0,
-		)
-
-		# ----------------------------------------------------
-		# Scrollable content
-		# ----------------------------------------------------
+		subtitle = Gtk.Label(label="Select an application to install, launch, or remove.")
+		subtitle.set_halign(Gtk.Align.START)
+		subtitle.set_xalign(0)
+		subtitle.get_style_context().add_class("category-subtitle")
+		title_box.pack_start(subtitle, False, False, 0)
+		main_pane.pack_start(title_box, False, False, 0)
 
 		scrolled = Gtk.ScrolledWindow()
-
-		scrolled.set_policy(
-			Gtk.PolicyType.NEVER,
-			Gtk.PolicyType.AUTOMATIC,
-		)
-
+		scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+		# Prevent each category's card content from changing the window's natural width.
+		scrolled.set_propagate_natural_width(False)
+		scrolled.set_hexpand(True)
 		scrolled.set_vexpand(True)
-		scrolled.get_style_context().add_class(
-			"scroll-window"
-		)
+		scrolled.get_style_context().add_class("scroll-window")
+		main_pane.pack_start(scrolled, True, True, 0)
 
-		outer.pack_start(
-			scrolled,
-			True,
-			True,
-			0,
-		)
-
-		content = Gtk.Box(
+		# Use explicit two-slot rows rather than relying on Gtk.Grid's inferred
+		# column count. This keeps a final single card in the left half-column.
+		self.app_container = Gtk.Box(
 			orientation=Gtk.Orientation.VERTICAL,
-			spacing=18,
+			spacing=14,
 		)
+		self.app_container.set_halign(Gtk.Align.FILL)
+		self.app_container.set_valign(Gtk.Align.START)
+		self.app_container.set_hexpand(True)
+		scrolled.add(self.app_container)
 
-		content.set_margin_top(4)
-		content.set_margin_bottom(8)
-
-		scrolled.add(content)
-
-		# ----------------------------------------------------
-		# Office + Media
-		# ----------------------------------------------------
-
-		major_grid = Gtk.Grid()
-
-		major_grid.set_column_homogeneous(True)
-		major_grid.set_column_spacing(18)
-
-		office_card = self._create_category_card(
-			"Office"
-		)
-
-		multimedia_card = self._create_category_card(
-			"Multimedia"
-		)
-
-		major_grid.attach(
-			office_card,
-			0,
-			0,
-			1,
-			1,
-		)
-
-		major_grid.attach(
-			multimedia_card,
-			1,
-			0,
-			1,
-			1,
-		)
-
-		content.pack_start(
-			major_grid,
-			False,
-			False,
-			0,
-		)
-
-		# ----------------------------------------------------
-		# System + Sundries
-		# ----------------------------------------------------
-
-		lower_grid = Gtk.Grid()
-
-		lower_grid.set_column_homogeneous(True)
-		lower_grid.set_column_spacing(18)
-
-		system_card = self._create_category_card(
-			"System"
-		)
-
-		documentation_card = self._create_category_card(
-			"Sundries"
-		)
-
-		lower_grid.attach(
-			system_card,
-			0,
-			0,
-			1,
-			1,
-		)
-
-		lower_grid.attach(
-			documentation_card,
-			1,
-			0,
-			1,
-			1,
-		)
-
-		content.pack_start(
-			lower_grid,
-			False,
-			False,
-			0,
-		)
-
-		# ----------------------------------------------------
-		# Footer
-		# ----------------------------------------------------
-
+		# Footer remains available independently of the selected category.
 		footer_box = Gtk.Box(
-		    orientation=Gtk.Orientation.HORIZONTAL,
-		    spacing=8,
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=8,
 		)
-
 		footer = Gtk.Label(
-		    label="Administrative privileges may be required for installation and system changes."
+			label="Administrative privileges may be required for installation and system changes."
 		)
+		footer.set_halign(Gtk.Align.START)
+		footer.set_xalign(0)
+		footer.set_line_wrap(True)
+		footer.get_style_context().add_class("footer")
+		footer_box.pack_start(footer, True, True, 0)
 
-		footer.set_halign(
-		    Gtk.Align.START
-		)
-
-		footer.get_style_context().add_class(
-		    "footer"
-		)
-
-		footer_box.pack_start(
-		    footer,
-		    True,
-		    True,
-		    0,
-		)
-
-		menu_button = Gtk.Button(
-		    label="☰"
-		)
-
-		menu_button.set_tooltip_text(
-		    "Menu"
-		)
-
+		menu_button = Gtk.Button(label="☰")
+		menu_button.set_tooltip_text("Menu")
 		menu = Gtk.Menu()
 
-		appearance_item = Gtk.MenuItem(
-		    label="Appearance"
-		)
-
-		menu.append(
-		    appearance_item
-		)
-
-		light_item = Gtk.CheckMenuItem(
-		    label="BcalcOS Light"
-		)
-
-		dark_item = Gtk.CheckMenuItem(
-		    label="BcalcOS Dark"
-		)
-		
+		appearance_item = Gtk.MenuItem(label="Appearance")
+		menu.append(appearance_item)
+		light_item = Gtk.CheckMenuItem(label="BcalcOS Light")
+		dark_item = Gtk.CheckMenuItem(label="BcalcOS Dark")
 		light_item.set_active(True)
-
 		appearance_menu = Gtk.Menu()
+		appearance_menu.append(light_item)
+		appearance_menu.append(dark_item)
+		appearance_item.set_submenu(appearance_menu)
+		menu.append(Gtk.SeparatorMenuItem())
 
-		appearance_menu.append(
-		    light_item
-		)
-
-		appearance_menu.append(
-		    dark_item
-		)
-
-		appearance_item.set_submenu(
-		    appearance_menu
-		)
-
-		menu.append(
-		    Gtk.SeparatorMenuItem()
-		)
-
-		about_item = Gtk.MenuItem(
-		    label="About"
-		)
-
-		menu.append(
-		    about_item
-		)
-
-		exit_item = Gtk.MenuItem(
-		    label="Exit"
-		)
-
-		menu.append(
-		    exit_item
-		)
-
+		about_item = Gtk.MenuItem(label="About")
+		menu.append(about_item)
+		exit_item = Gtk.MenuItem(label="Exit")
+		menu.append(exit_item)
 		menu.show_all()
 
-
 		def show_menu(button):
-		    menu.popup_at_widget(
-			button,
-			Gdk.Gravity.NORTH_EAST,
-			Gdk.Gravity.SOUTH_EAST,
-			None,
-		    )
+			menu.popup_at_widget(
+				button,
+				Gdk.Gravity.NORTH_EAST,
+				Gdk.Gravity.SOUTH_EAST,
+				None,
+			)
 
 		def set_light_theme(menu_item):
-		    if menu_item.get_active():
-		        dark_item.set_active(False)
-		        Gtk.Settings.get_default().set_property(
-		            "gtk-application-prefer-dark-theme", False
-		        )
-		        install_css(MAIN_CSS)
+			if menu_item.get_active():
+				dark_item.set_active(False)
+				Gtk.Settings.get_default().set_property(
+					"gtk-application-prefer-dark-theme", False
+				)
+				install_css(MAIN_CSS)
 
 		def set_dark_theme(menu_item):
-		    if menu_item.get_active():
-		        light_item.set_active(False)
-		        Gtk.Settings.get_default().set_property(
-		            "gtk-application-prefer-dark-theme", True
-		        )
-		        install_css(DARK_CSS)
-
-		def exit_welcome_center(menu_item):
-		    Gtk.main_quit()
+			if menu_item.get_active():
+				light_item.set_active(False)
+				Gtk.Settings.get_default().set_property(
+					"gtk-application-prefer-dark-theme", True
+				)
+				install_css(DARK_CSS)
 
 		def show_about(menu_item):
-		    about = Gtk.AboutDialog(
-			transient_for=self,
-			modal=True,
-		    )
+			about = Gtk.AboutDialog(transient_for=self, modal=True)
+			about.set_program_name("BcalcOS Welcome Center")
+			about.set_version("1.4")
+			about.set_comments("BcalcOS application and system resources")
+			about.set_license_type(Gtk.License.GPL_3_0)
+			about.run()
+			about.destroy()
 
-		    about.set_program_name(
-			"BcalcOS Welcome Center"
-		    )
+		light_item.connect("toggled", set_light_theme)
+		dark_item.connect("toggled", set_dark_theme)
+		exit_item.connect("activate", lambda _item: Gtk.main_quit())
+		about_item.connect("activate", show_about)
+		menu_button.connect("clicked", show_menu)
+		footer_box.pack_end(menu_button, False, False, 0)
+		main_pane.pack_start(footer_box, False, False, 0)
 
-		    about.set_version(
-			"version 1.3.1"
-		    )
+		self._render_category("Office")
 
-		    about.set_comments(
-			"by briancalc"
-		    )
-
-		    about.set_license_type(
-			Gtk.License.GPL_3_0
-		    )
-
-		    about.run()
-		    about.destroy()
-
-		light_item.connect(
-		    "toggled",
-		    set_light_theme,
-		)
-
-		dark_item.connect(
-		    "toggled",
-		    set_dark_theme,
-		)
-
-		exit_item.connect(
-		    "activate",
-		    exit_welcome_center,
-		)
-
-		about_item.connect(
-		    "activate",
-		    show_about,
-		)
-
-		menu_button.connect(
-		    "clicked",
-		    show_menu,
-		)
-
-		footer_box.pack_end(
-		    menu_button,
-		    False,
-		    False,
-		    0,
-		)
-
-		outer.pack_start(
-		    footer_box,
-		    False,
-		    False,
-		    0,
-		)
-
-
-	# ========================================================
-	# CATEGORY CARD
-	# ========================================================
-
-	def _create_category_card(self, category_name):
-
-		frame = Gtk.Box(
-			orientation=Gtk.Orientation.VERTICAL,
-			spacing=10,
-		)
-
-		frame.get_style_context().add_class(
-			"category-card"
-		)
-
-		# Category header
-		header = Gtk.Label(
-			label=category_name
-		)
-
-		header.set_halign(
-			Gtk.Align.FILL
-		)
-
-		header.set_xalign(0)
-
-		header.get_style_context().add_class(
-			"category-header"
-		)
-
-		frame.pack_start(
-			header,
-			False,
-			False,
-			0,
-		)
-
-		# Small gold accent
-		accent = Gtk.Box()
-
-		accent.set_size_request(
-			-1,
-			4,
-		)
-
-		accent.get_style_context().add_class(
-			"category-header-accent"
-		)
-
-		frame.pack_start(
-			accent,
-			False,
-			False,
-			2,
-		)
-
-		# Application grid
-		grid = Gtk.Grid()
-
-		grid.set_column_homogeneous(True)
-		grid.set_column_spacing(10)
-		grid.set_row_spacing(10)
-
-		applications = APPS_CONFIG[category_name]
-
-		for index, (app_name, status) in enumerate(applications):
-			detected_status = self.installed_status.get(app_name, status)
-
-			button = self._create_app_button(
-				app_name,
-				detected_status,
-			)
-
-			# Two columns in each category.
-			column = index % 2
-			row = index // 2
-
-			grid.attach(
-				button,
-				column,
-				row,
-				1,
-				1,
-			)
-
-		frame.pack_start(
-			grid,
-			False,
-			False,
-			6,
-		)
-
-		return frame
-
-	# ========================================================
-	# APPLICATION BUTTON
-	# ========================================================
-
-	def _create_app_button(
-		self,
-		app_name,
-		is_installed,
-	):
-
+	def _create_category_button(self, category_name):
 		button = Gtk.Button()
-
-		button.set_relief(
-			Gtk.ReliefStyle.NONE
-		)
-
+		button.set_relief(Gtk.ReliefStyle.NONE)
 		button.set_hexpand(True)
 		button.set_halign(Gtk.Align.FILL)
+		button.set_size_request(-1, 48)
+		button.get_style_context().add_class("sidebar-category-button")
 
-		button.get_style_context().add_class(
-			"app-button"
+		row = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=11,
 		)
+		accent = Gtk.Box()
+		accent.set_size_request(4, -1)
+		accent.get_style_context().add_class("sidebar-category-accent")
+		row.pack_start(accent, False, False, 0)
+
+		icon_name = self._available_icon_name(CATEGORY_ICON_NAMES[category_name])
+		icon = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.LARGE_TOOLBAR)
+		icon.set_pixel_size(26)
+		icon.get_style_context().add_class("sidebar-category-icon")
+		row.pack_start(icon, False, False, 0)
+
+		label = Gtk.Label(label=CATEGORY_DISPLAY_NAMES.get(category_name, category_name))
+		label.set_ellipsize(Pango.EllipsizeMode.END)
+		label.set_halign(Gtk.Align.START)
+		label.set_xalign(0)
+		label.get_style_context().add_class("sidebar-category-label")
+		row.pack_start(label, True, True, 0)
+		button.add(row)
+		button.connect("clicked", self._on_category_selected, category_name)
+		return button
+
+	def _available_icon_name(self, names):
+		icon_theme = Gtk.IconTheme.get_default()
+		for icon_name in names:
+			try:
+				if icon_theme and icon_theme.has_icon(icon_name):
+					return icon_name
+			except Exception:
+				continue
+		return "application-x-executable-symbolic"
+
+	def _on_category_selected(self, _button, category_name):
+		self._render_category(category_name)
+
+	def _render_category(self, category_name):
+		if category_name not in APPS_CONFIG or self.app_container is None:
+			return
+
+		self.current_category = category_name
+		if self.category_title_label is not None:
+				self.category_title_label.set_text(CATEGORY_DISPLAY_NAMES.get(category_name, category_name))
+
+		for name, button in self.category_buttons.items():
+			style = button.get_style_context()
+			if name == category_name:
+				style.add_class("active-category")
+			else:
+				style.remove_class("active-category")
+
+		for child in self.app_container.get_children():
+			self.app_container.remove(child)
+		self.app_buttons = {}
+
+		apps = APPS_CONFIG[category_name]
+		for row_start in range(0, len(apps), 2):
+			row = Gtk.Box(
+				orientation=Gtk.Orientation.HORIZONTAL,
+				spacing=14,
+			)
+			row.set_homogeneous(True)
+			row.set_halign(Gtk.Align.FILL)
+			row.set_hexpand(True)
+
+			# Every row has two equal slots. For an odd final application, the
+			# second slot is simply empty; no invisible spacer widget is needed.
+			for column in range(2):
+				slot = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+				slot.set_halign(Gtk.Align.FILL)
+				slot.set_hexpand(True)
+				app_index = row_start + column
+				if app_index < len(apps):
+					app_name, configured_status = apps[app_index]
+					status = self.installed_status.get(app_name, configured_status)
+					card = self._create_app_card(app_name, status)
+					card.set_halign(Gtk.Align.FILL)
+					card.set_hexpand(True)
+					slot.pack_start(card, True, True, 0)
+				row.pack_start(slot, True, True, 0)
+
+			self.app_container.pack_start(row, False, True, 0)
+
+		self.app_container.show_all()
+
+	def _find_desktop_app_info(self, app_name):
+		if app_name in self.desktop_app_info_cache:
+			return self.desktop_app_info_cache[app_name]
+
+		aliases = DESKTOP_NAME_ALIASES.get(app_name, (app_name,))
+		wanted_names = {_normalise_app_label(alias) for alias in aliases}
+		wanted_executables = {
+			_normalise_app_label(os.path.basename(executable))
+			for executable in DESKTOP_EXECUTABLE_ALIASES.get(app_name, ())
+		}
+		name_matches = {}
+		executable_match = None
+
+		try:
+			for app_info in Gio.AppInfo.get_all():
+				try:
+					name = app_info.get_name()
+					normalised_name = _normalise_app_label(name or "")
+					if normalised_name in wanted_names:
+						name_matches[normalised_name] = app_info
+						continue
+					executable = app_info.get_executable()
+					if executable and _normalise_app_label(os.path.basename(executable)) in wanted_executables:
+						if executable_match is None:
+							executable_match = app_info
+				except Exception:
+					continue
+		except Exception:
+			name_matches = {}
+
+		result = None
+		for alias in aliases:
+			result = name_matches.get(_normalise_app_label(alias))
+			if result is not None:
+				break
+		if result is None:
+			result = executable_match
+
+		self.desktop_app_info_cache[app_name] = result
+		return result
+
+	def _create_app_icon(self, app_name):
+		app_info = self._find_desktop_app_info(app_name)
+		if app_info is not None:
+			try:
+				icon_gicon = app_info.get_icon()
+				if icon_gicon is not None:
+					image = Gtk.Image.new_from_gicon(icon_gicon, Gtk.IconSize.DIALOG)
+					image.set_pixel_size(34)
+					return image, True
+			except Exception:
+				pass
+
+		fallback_name = ICON_NAMES.get(app_name, "application-x-executable-symbolic")
+		fallback_name = self._available_icon_name((fallback_name, "application-x-executable-symbolic"))
+		image = Gtk.Image.new_from_icon_name(fallback_name, Gtk.IconSize.DIALOG)
+		image.set_pixel_size(30)
+		image.get_style_context().add_class("app-icon-fallback")
+		return image, False
+
+	def _create_app_card(self, app_name, is_installed):
+		card = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL,
+			spacing=0,
+		)
+		card.set_hexpand(True)
+		card.get_style_context().add_class("app-card")
+
+		button = Gtk.Button()
+		button.set_relief(Gtk.ReliefStyle.NONE)
+		button.set_hexpand(True)
+		button.set_halign(Gtk.Align.FILL)
+		button.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+		button.get_style_context().add_class("app-main-button")
 
 		content = Gtk.Box(
 			orientation=Gtk.Orientation.HORIZONTAL,
-			spacing=13,
+			spacing=12,
 		)
-
-		content.set_halign(
-			Gtk.Align.FILL
-		)
-
-		# ----------------------------------------------------
-		# Icon well
-		# ----------------------------------------------------
+		content.set_halign(Gtk.Align.FILL)
 
 		icon_box = Gtk.Box()
-
-		icon_box.set_size_request(
-			48,
-			48,
-		)
-
-		icon_box.set_halign(
-			Gtk.Align.CENTER
-		)
-
-		icon_box.set_valign(
-			Gtk.Align.CENTER
-		)
-
-		icon_box.get_style_context().add_class(
-			"app-icon-box"
-		)
-
-		icon_name = ICON_NAMES.get(
-			app_name,
-			"application-x-executable-symbolic",
-		)
-
-		icon = Gtk.Image.new_from_icon_name(
-			icon_name,
-			Gtk.IconSize.DIALOG,
-		)
-
-		icon.set_pixel_size(27)
-
-		icon.get_style_context().add_class(
-			"app-icon"
-		)
-
-		icon_box.pack_start(
-			icon,
-			True,
-			True,
-			0,
-		)
-
-		content.pack_start(
-			icon_box,
-			False,
-			False,
-			0,
-		)
-
-		# ----------------------------------------------------
-		# Text
-		# ----------------------------------------------------
+		icon_box.set_size_request(46, 46)
+		icon_box.set_halign(Gtk.Align.CENTER)
+		icon_box.set_valign(Gtk.Align.CENTER)
+		icon_box.get_style_context().add_class("app-icon-box")
+		icon, _is_real_icon = self._create_app_icon(app_name)
+		icon_box.pack_start(icon, True, True, 0)
+		content.pack_start(icon_box, False, False, 0)
 
 		text_box = Gtk.Box(
 			orientation=Gtk.Orientation.VERTICAL,
-			spacing=3,
+			spacing=4,
 		)
-
-		text_box.set_valign(
-			Gtk.Align.CENTER
-		)
-
-		name_label = Gtk.Label(
-			label=app_name
-		)
-
-		name_label.set_halign(
-			Gtk.Align.START
-		)
-
-		name_label.set_ellipsize(
-			Pango.EllipsizeMode.END
-		)
-
-		name_label.get_style_context().add_class(
-			"app-name"
-		)
-
-		text_box.pack_start(
-			name_label,
-			False,
-			False,
-			0,
-		)
+		text_box.set_valign(Gtk.Align.CENTER)
+		name_label = Gtk.Label(label=app_name)
+		name_label.set_halign(Gtk.Align.START)
+		name_label.set_xalign(0)
+		name_label.set_ellipsize(Pango.EllipsizeMode.END)
+		name_label.get_style_context().add_class("app-name")
+		text_box.pack_start(name_label, False, False, 0)
 
 		status_label = Gtk.Label()
-
-		status_label.set_halign(
-			Gtk.Align.START
-		)
-
+		status_label.set_halign(Gtk.Align.START)
+		status_label.set_xalign(0)
 		if is_installed is True:
-
-			if app_name in ("MousePad", "Atril"):
-				# MousePad is installed-only and not removable.
-				status_label.set_text(
-					"✓ Installed"
-				)
-				status_label.get_style_context().add_class(
-					"status-installed"
-				)
-				button.set_sensitive(False)
+			if app_name in GUIDE_URLS:
+				status_label.set_text("✓ Installed · Open Guide")
 			else:
-
-				status_label.set_text("✓ Installed  ·  REMOVE?")
-				status_label.get_style_context().add_class(
-				    "status-installed-remove"
-				)
-
+				status_label.set_text("✓ Installed · Launch")
+			status_label.get_style_context().add_class("app-status-installed")
 		elif is_installed is None:
-
-			if app_name == "TBD":
-
-				status_label.set_text(
-					"Coming Soon"
-				)
-
-				status_label.get_style_context().add_class(
-					"status-placeholder"
-				)
-
-				button.set_sensitive(False)
-
-			elif app_name in (
-				"Run Updates",
-				"Create New User",
-			):
-
-				status_label.set_text(
-					"➜ Click to run"
-				)
-
-				status_label.get_style_context().add_class(
-					"status-action"
-				)
-
+			if app_name in SYSTEM_ACTIONS:
+				status_label.set_text("➜ Click to run")
+				status_label.get_style_context().add_class("app-status-action")
 			else:
-
-				status_label.set_text(
-					"➜ Click to open"
-				)
-
-				status_label.get_style_context().add_class(
-					"status-action"
-				)
-
+				status_label.set_text("➜ Click to open")
+				status_label.get_style_context().add_class("app-status-action")
+		elif app_name in NOT_REMOVABLE:
+			status_label.set_text("Required application unavailable")
+			status_label.get_style_context().add_class("app-status")
 		else:
-
-			status_label.set_text(
-				"Click to Install"
-			)
-
-			status_label.get_style_context().add_class(
-				"status-click"
-			)
-
-		text_box.pack_start(
-			status_label,
-			False,
-			False,
-			0,
-		)
-
-		content.pack_start(
-			text_box,
-			True,
-			True,
-			0,
-		)
-
+			status_label.set_text("Click to Install")
+			status_label.get_style_context().add_class("app-status-install")
+		text_box.pack_start(status_label, False, False, 0)
+		content.pack_start(text_box, True, True, 0)
 		button.add(content)
+		button.connect("clicked", self._on_app_clicked, app_name, is_installed)
+		button.connect("enter-notify-event", self._on_card_pointer_enter, card)
+		button.connect("leave-notify-event", self._on_card_pointer_leave, card)
+		card.pack_start(button, True, True, 0)
 
-		button.connect(
-			"clicked",
-			self._on_app_clicked,
-			app_name,
-			is_installed,
-		)
+		remove_button = None
+		if is_installed is True and app_name not in NOT_REMOVABLE:
+			remove_button = Gtk.Button(label="×")
+			remove_button.set_relief(Gtk.ReliefStyle.NONE)
+			remove_button.set_valign(Gtk.Align.FILL)
+			remove_button.set_tooltip_text(f"Remove {app_name}")
+			remove_button.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+			remove_button.get_style_context().add_class("app-remove-button")
+			remove_button.connect("clicked", self._on_remove_clicked, app_name)
+			remove_button.connect("enter-notify-event", self._on_card_pointer_enter, card)
+			remove_button.connect("leave-notify-event", self._on_card_pointer_leave, card)
+			card.pack_end(remove_button, False, False, 3)
+
+		if is_installed is False and app_name in NOT_REMOVABLE:
+			button.set_sensitive(False)
 
 		self.app_buttons[app_name] = {
 			"button": button,
 			"status": status_label,
+			"icon": icon,
+			"remove_button": remove_button,
 		}
+		return card
 
-		return button
+	def _on_card_pointer_enter(self, _widget, _event, card):
+		card.get_style_context().add_class("pointer-hover")
+		return False
 
-	# ========================================================
-	# BUTTON HANDLER
-	# ========================================================
+	def _on_card_pointer_leave(self, _widget, _event, card):
+		card.get_style_context().remove_class("pointer-hover")
+		return False
 
-	def _on_app_clicked(
-		self,
-		widget,
-		app_name,
-		is_installed,
-	):
-
-		# Use live status rather than the parameter captured
-		# at button creation time.
-		current_status = self.installed_status.get(
-			app_name,
-			is_installed,
-		)
-
-		if app_name == "TBD":
+	def _on_remove_clicked(self, _remove_button, app_name):
+		if app_name in NOT_REMOVABLE:
 			return
+		info = self.app_buttons.get(app_name)
+		if info:
+			self._show_remove_confirmation(info["button"], app_name)
 
-		# MousePad & Atril are installed-only and not removable.
-		if app_name in ("MousePad", "Atril"):
-			return
+	def _on_app_clicked(self, widget, app_name, _initial_status):
+		current_status = self.installed_status.get(app_name, _initial_status)
 
-		if app_name == "Run Updates":
-			self._run_updates()
-			return
-
-		if app_name == "Keyboard Layout":
-			self._show_keyboard_layout_dialog()
-			return
-
-		if app_name == "Settings":
-			self._open_settings_manager()
-			return
-
-		if app_name == "ClamAV":
-			self._show_install_confirmation(widget, app_name)
-			return
-
-		if app_name == "WireGuard":
-			self._show_install_confirmation(widget, app_name)
-			return
-
-		if app_name == "Create New User":
-			self._show_new_user_dialog()
+		if app_name in SYSTEM_ACTIONS:
+			if app_name == "Run Updates":
+				self._run_updates()
+			elif app_name == "Keyboard Layout":
+				self._show_keyboard_layout_dialog()
+			elif app_name == "Settings":
+				self._open_settings_manager()
+			elif app_name == "Create New User":
+				self._show_new_user_dialog()
 			return
 
 		if app_name in DOCS_URLS:
-			self._open_documentation(
-				DOCS_URLS[app_name]
-			)
+			self._open_documentation(DOCS_URLS[app_name])
+			return
+
+		if app_name in GUIDE_URLS and current_status is True:
+			self._open_documentation(GUIDE_URLS[app_name])
 			return
 
 		if current_status is True:
-			self._show_remove_confirmation(
-				widget,
-				app_name,
+			self._launch_application(widget, app_name)
+		elif app_name in NOT_REMOVABLE:
+			self._show_error(
+				f"{app_name} is a required BcalcOS application, but its executable was not found."
 			)
 		else:
-			self._show_install_confirmation(
-				widget,
-				app_name,
-			)
+			self._show_install_confirmation(widget, app_name)
+
+	def _launch_application(self, widget, app_name):
+		try:
+			if app_name in TERMINAL_LAUNCH_COMMANDS:
+				subprocess.Popen(TERMINAL_LAUNCH_COMMANDS[app_name])
+				return
+
+			app_info = self._find_desktop_app_info(app_name)
+			if app_info is not None and app_info.launch([], None):
+				return
+
+			executable = FALLBACK_EXECUTABLES.get(app_name)
+			if not executable:
+				raise RuntimeError(f"No launch command is configured for {app_name}.")
+			subprocess.Popen([executable])
+		except Exception as exc:
+			self._show_error(f"Could not launch {app_name}.\n\n{exc}")
 
 	# ========================================================
 	# INSTALL CONFIRMATION
@@ -1711,9 +1814,7 @@ class WelcomeApp(Gtk.Window):
 		)
 
 		dialog.format_secondary_text(
-			f"BcalcOS will uninstall {app_name} "
-			f"and clean up unused dependencies.\n\n"
-			f"Administrative authentication may be required."
+			f"This will uninstall {app_name} from your system."
 		)
 
 		response = dialog.run()
@@ -1910,6 +2011,10 @@ class WelcomeApp(Gtk.Window):
 		app_name,
 	):
 
+		if app_name in NOT_REMOVABLE:
+			self._show_error(f"{app_name} cannot be removed from the Welcome Center.")
+			return
+
 		package = PACKAGE_MAP.get(
 			app_name
 		)
@@ -2032,193 +2137,60 @@ class WelcomeApp(Gtk.Window):
 
 			status.set_text(text)
 
-			status.get_style_context().remove_class(
-				"status-click"
-			)
-
-			status.get_style_context().remove_class(
-				"status-installed"
-			)
-
-			status.get_style_context().add_class(
-				"status-action"
-			)
+			style = status.get_style_context()
+			for class_name in (
+				"app-status-install",
+				"app-status-installed",
+				"app-status-action",
+			):
+				style.remove_class(class_name)
+			style.add_class("app-status-action")
 
 		widget.set_sensitive(False)
+		for info in self.app_buttons.values():
+			if info.get("button") is widget and info.get("remove_button") is not None:
+				info["remove_button"].set_sensitive(False)
 
-	def _installation_success(
-		self,
-		widget,
-		app_name,
-		progress_dialog,
-		pulse_id,
-	):
-
+	def _installation_success(self, widget, app_name, progress_dialog, pulse_id):
 		try:
 			GLib.source_remove(pulse_id)
 		except Exception:
 			pass
-
 		progress_dialog.destroy()
-
-		info = self.app_buttons.get(
-			app_name
-		)
-
-		if info:
-
-			status = info["status"]
-
-			status.get_style_context().remove_class(
-				"status-click"
-			)
-
-			status.get_style_context().remove_class(
-				"status-action"
-			)
-
-			status.get_style_context().add_class(
-				"status-installed"
-			)
-
-			if app_name in ("MousePad", "Atril"):
-				status.set_text(
-					"✓ Installed"
-				)
-				info["button"].set_sensitive(
-					False
-				)
-			else:
-
-				status.set_text("✓ Installed  ·  REMOVE?")
-				status.get_style_context().add_class(
-				    "status-installed-remove"
-				)
-
-		self.installed_status[
-			app_name
-		] = True
-
+		self.installed_status[app_name] = True
+		self.desktop_app_info_cache.pop(app_name, None)
+		self._render_category(self.current_category)
 		return False
 
-	def _installation_failed(
-		self,
-		widget,
-		message,
-		progress_dialog,
-		pulse_id,
-	):
-
+	def _installation_failed(self, widget, message, progress_dialog, pulse_id):
 		try:
 			GLib.source_remove(pulse_id)
 		except Exception:
 			pass
-
 		progress_dialog.destroy()
-
-		widget.set_sensitive(True)
-
-		self._show_error(
-			f"Installation failed.\n\n{message}"
-		)
-
+		self._render_category(self.current_category)
+		self._show_error(f"Installation failed.\n\n{message}")
 		return False
 
-	# ========================================================
-	# REMOVAL UI
-	# ========================================================
-
-	def _removal_success(
-		self,
-		widget,
-		app_name,
-		progress_dialog,
-		pulse_id,
-	):
-
+	def _removal_success(self, widget, app_name, progress_dialog, pulse_id):
 		try:
 			GLib.source_remove(pulse_id)
 		except Exception:
 			pass
-
 		progress_dialog.destroy()
-
-		info = self.app_buttons.get(
-			app_name
-		)
-
-		if info:
-
-			status = info["status"]
-
-			status.set_text(
-				"Click to Install"
-			)
-
-			status.get_style_context().remove_class(
-				"status-installed"
-			)
-
-			status.get_style_context().remove_class(
-				"status-action"
-			)
-
-			status.get_style_context().add_class(
-				"status-click"
-			)
-
-			info["button"].set_sensitive(
-				True
-			)
-
-		self.installed_status[
-			app_name
-		] = False
-
+		self.installed_status[app_name] = False
+		self.desktop_app_info_cache.pop(app_name, None)
+		self._render_category(self.current_category)
 		return False
 
-	def _removal_failed(
-		self,
-		widget,
-		app_name,
-		message,
-		progress_dialog,
-		pulse_id,
-	):
-
+	def _removal_failed(self, widget, app_name, message, progress_dialog, pulse_id):
 		try:
 			GLib.source_remove(pulse_id)
 		except Exception:
 			pass
-
 		progress_dialog.destroy()
-
-		info = self.app_buttons.get(
-			app_name
-		)
-
-		if info:
-
-			status = info["status"]
-
-			status.set_text("✓ Installed  ·  REMOVE?")
-
-			status.get_style_context().remove_class(
-				"status-action"
-			)
-
-			status.get_style_context().add_class(
-				"status-installed-remove"
-			)
-
-			info["button"].set_sensitive(
-				True
-			)
-
-		self._show_error(
-			f"Removal failed.\n\n{message}"
-		)
-
+		self._render_category(self.current_category)
+		self._show_error(f"Removal failed.\n\n{message}")
 		return False
 
 	# ========================================================

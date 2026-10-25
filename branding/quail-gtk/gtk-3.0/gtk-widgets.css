@@ -1,32 +1,26 @@
 * {
-	padding: 0;
-	margin: 0;
+    padding: 0;
+    margin: 0;
 
-	background-clip: padding-box;
+    background-clip: padding-box;
 
-	-GtkToolButton-icon-spacing: 4px;
+    outline-color: @focus_border_color;
+    outline-style: dashed;
+    outline-offset: -2px;
+    outline-width: 1px;
 
-	-GtkTextView-error-underline-color: @error_color;
+    -gtk-outline-radius: 2px;
+    -gtk-icon-style: regular; /* disable symbolic icons */
+}
 
-	-GtkScrolledWindow-scrollbar-spacing: 3px;
+/* Hyperlink colors: modern replacement for the removed
+   -GtkIMHtml-hyperlink-color / -GtkHTML-link-color properties. */
+*:link {
+    color: @link_color;
+}
 
-	-GtkToolItemGroup-expander-size: 11px;
-
-	-GtkIMHtml-hyperlink-color: @link_color;
-	-GtkHTML-link-color: @link_color;
-
-	-WnckTasklist-fade-overlay-rect: 0;
-
-	outline-color: @focus_border_color;
-	outline-style: dashed;
-	outline-offset: -2px;
-	outline-width: 1px;
-
-	-gtk-outline-radius: 2px;
-	-gtk-icon-style: regular; /* disable symbolic icons */
-	
-	-GtkWindow-resize-grip-width: 11px;
-	-GtkWindow-resize-grip-height: 11px;
+*:visited {
+    color: @link_color;
 }
 
 /***************
@@ -151,8 +145,6 @@ spinner:active:disabled {
 	background-image: none;
 	border-style: none;
 	border-image: none;
-	-GtkButton-image-spacing: 0;
-	-GtkButton-inner-border: 0;
 }
 
 .rubberband,
@@ -582,10 +574,6 @@ toolbar.horizontal button:active {
 }
 
 button {
-	-GtkButton-image-spacing: 4px;
-	-GtkButton-interior-focus: true;
-	-GtkButton-default-border: 0;
-	-GtkButton-inner-border: 3px;
 	color: @theme_text_color;
 	border-style: solid;
 	border-color: transparent;
@@ -913,7 +901,6 @@ notebook {
 	background-color: @notebook_bg_color;
 	/*border-radius: 3px 3px 0px 0px;*/
 	/*-GtkNotebook-tab-overlap: 2;
-	-GtkNotebook-tab-curvature: 3;
 	-GtkNotebook-initial-gap: 0;*/
 }
 
@@ -1181,8 +1168,6 @@ combobox button.combo:disabled {
 
 combobox separator {
 	/*-GtkWidget-wide-separators: true;*/
-	-GtkWidget-horizontal-separator: 1;
-	-GtkWidget-vertical-separator: 1;
 }
 
 combobox > .linked > entry.combo,
@@ -1335,20 +1320,21 @@ toolbar.primary-toolbar combobox > .linked > button.combo:last-child {
  **************/
 
 scrollbar {
-	background-image: none;
-	border-style: solid;
-	/*-GtkRange-trough-border: 0;*/
-	border-color: @scrollbar_trough_border_color;
-	-GtkScrollbar-has-backward-stepper: true;
-	-GtkScrollbar-has-forward-stepper: true;
-	/*-GtkRange-arrow-scaling: 0.4;*/
-	-GtkRange-slider-width: 15;
-	-GtkRange-stepper-size: 15px;
-	-GtkScrollbar-min-slider-length: 30;
-	-GtkRange-stepper-spacing: 0;
-	-GtkRange-trough-under-steppers: 0;
-	box-shadow: none;
-	border-image: none;
+    background-image: none;
+    border-style: solid;
+    border-color: @scrollbar_trough_border_color;
+    box-shadow: none;
+    border-image: none;
+}
+
+/* Modern replacements for the removed RC-style properties:
+   the scrollbar width/height is set below in the .vertical and
+   .horizontal rules (14px); the slider keeps a minimum size so
+   the thumb never vanishes on long lists. */
+scrollbar slider {
+    min-width: 30px;
+    min-height: 30px;
+    border-radius: 0;
 }
 
 scrollbar.vertical {
@@ -1883,7 +1869,6 @@ toolbar:disabled {
 
 toolbar menubar {
 	border-style: none;
-	-GtkToolbar-button-relief: normal;
 	padding-left: 4px;
 	padding-right: 4px;
 }
@@ -1902,7 +1887,6 @@ toolbar.primary-toolbar {
 	border-top-color: @toolbar_border_top_color;
 	border-bottom-color: @toolbar_border_bottom_color;
 	-GtkWidget-window-dragging: true;
-	-GtkToolbar-button-relief: normal;
 }
 
 toolbar.primary-toolbar:disabled {
@@ -1933,7 +1917,6 @@ toolbar.inline-toolbar {
 	border-width: 1px;
 	border-radius: 0;
 	border-style: solid;
-	-GtkToolbar-button-relief: normal;
 	padding: 4px;
 }
 
@@ -2122,15 +2105,6 @@ label selection:backdrop:disabled {
 /***************
  * GtkTreeview *
  ***************/
-
-treeview {
-	-GtkTreeView-vertical-separator: 0;
-	-GtkTreeView-expander-size: 13;
-	-GtkTreeView-grid-line-width: 0;
-	-GtkTreeView-grid-line-pattern: '';
-	-GtkTreeView-tree-line-width: 0;
-	-GtkTreeView-tree-line-pattern: '';
-}
 
 treeview.dnd {
 	border-color: @internal_element_color;

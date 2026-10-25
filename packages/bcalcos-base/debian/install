@@ -1,6 +1,12 @@
 distroapps/bcalcos-installer/bcalcos-install    usr/bin/
+distroapps/bcalcos-installer/bcalcos-guiinstall    usr/bin/
 distroapps/bcalcos-installer/installer.sh    usr/lib/bcalcos-installer/
+distroapps/bcalcos-installer/side-input.png    usr/share/bcalcos-installer/
+distroapps/bcalcos-installer/side-summary.png    usr/share/bcalcos-installer/
+distroapps/bcalcos-installer/side-progress.png    usr/share/bcalcos-installer/
+distroapps/bcalcos-installer/side-finish.png    usr/share/bcalcos-installer/
 distroapps/bcalcos-installer/lib/*    usr/lib/bcalcos-installer/lib
+distroapps/bcalcos-installer/gui/bcalcos-guiinstaller.py    usr/lib/bcalcos-installer/gui/
 distroapps/bcalcos-welcome/bcalcos_welcome   usr/bin/
 distroapps/bcalcos-welcome/bcalcos_wel_detect.py    usr/lib/bcalcos-welcome/
 distroapps/marp-pick/marp-pick    usr/bin/

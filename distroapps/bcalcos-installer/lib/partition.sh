@@ -1,6 +1,6 @@
 #!/bin/bash
 #PARTITION.SH
-#v1.3
+#v1.4
 
 # Deterministic V1 partition calculator.
 #
@@ -34,6 +34,7 @@ MIN_ROOT_GIB=20
 MAX_ROOT_GIB=60
 MIN_HOME_GIB=10
 MIN_SWAP_GIB=2
+MAX_SWAP_GIB=8
 
 ###################################
 # Returns the device path for partition N on the given disk.
@@ -127,6 +128,13 @@ calculate_swap_size() {
 
     if (( ram < MIN_SWAP_GIB )); then
         ram="$MIN_SWAP_GIB"
+    fi
+
+    # Cap swap size. Swap is only an overflow valve
+    # hibernation is not supported (per-boot random key, see
+    # lib/crypto.sh), so swap larger than MAX_SWAP_GIB is wasted
+    if (( ram > MAX_SWAP_GIB )); then
+        ram="$MAX_SWAP_GIB"
     fi
 
     printf '%d\n' "$ram"

@@ -1,0 +1,14 @@
+#!/bin/bash
+# /usr/bin/bcalcos-guiinstall
+# BCalcOS Linux Installer - GUI Wrapper Script
+# v1.4
+
+GUI_INSTALLER="/usr/lib/bcalcos-installer/gui/bcalcos-guiinstaller.py"
+
+if [[ ! -f "$GUI_INSTALLER" ]]; then
+    echo "ERROR: GUI installer not found at $GUI_INSTALLER"
+    exit 1
+fi
+
+# Execute the GUI installer with all arguments passed through
+exec python3 "$GUI_INSTALLER" "$@"

@@ -3,6 +3,6 @@ Version=1.3
 Type=Application
 Name=Quail Calc
 Exec=/usr/bin/quail_calc
-Icon=org.xfce.panel.windowmenu
+Icon=/usr/share/bcalcosbrand/quail-calc-icon.png
 Terminal=false
 Categories=BcalcOS;

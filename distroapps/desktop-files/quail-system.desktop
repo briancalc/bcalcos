@@ -3,6 +3,6 @@ Version=1.3
 Type=Application
 Name=Quail System
 Exec=/usr/bin/quail-system
-Icon=org.xfce.panel.systemload
+Icon=/usr/share/bcalcosbrand/quail-system-icon.png
 Terminal=false
 Categories=BcalcOS;
