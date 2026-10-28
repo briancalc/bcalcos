@@ -2,7 +2,7 @@
 
 BcalcOS is a user-friendly Linux desktop distribution built on Devuan Excalibur.
 
-It combines the Devuan operating-system foundation with a defined desktop environment, deliberate system choices, custom configuration, applications, packages, a installer, and a software repository to provide a ready to use, general purpose desktop system.
+It combines the Devuan operating-system foundation with a defined desktop environment, deliberate system choices, custom configuration, applications, packages, a custom installer, and a software repository to provide a ready to use, general purpose desktop system.
 
 BcalcOS is built around complementary ideas: simpler software is usually better, individual components should have a clear purpose, and those components should work well together. The project favors straightforward, easily understandable solutions while recognizing that users should remain free to customize their systems.
 
@@ -36,7 +36,7 @@ BcalcOS is built around complementary ideas: simpler software is usually better,
 
 BcalcOS starts with Devuan and then makes its own choices about the components and configuration that form the finished operating system.
 
-The result is intended not simply to be a rebrand of the default Devuan installation. BcalcOS adds its own:
+The result is intended to not simply be a rebrand of the default Devuan installation. BcalcOS adds its own:
 
 - system configuration
 - desktop configuration
@@ -94,6 +94,7 @@ BcalcOS uses XLibre because the project considers it a capable and maintainable 
 
 See the BcalcOS Community topics [XLibre:  What is it?](https://bcalcos.discourse.group/t/xlibre-what-is-it/25), [Why BcalcOS Uses XLibre](https://bcalcos.discourse.group/t/why-bcalcos-uses-xlibre/26), and [XLibre:  Things to Know](https://bcalcos.discourse.group/t/xlibre-things-to-know/27) for additional information.
 
+There is also an 8 part series **In Depth:  XLibre** which goes into more detail.  [1/8 The Graphical Connector](https://bcalcos.discourse.group/t/the-graphical-connector/105), [2/8 The XLibre Fork](https://bcalcos.discourse.group/t/the-xlibre-fork/107), [3/8 XLibre vs X.org: What Actually Changed](https://bcalcos.discourse.group/t/xlibre-vs-x-org-what-actually-changed/108), [4/8 XLibre: Drivers](https://bcalcos.discourse.group/t/xlibre-drivers/109), [5/8 XLibre: Logs, Tools, and Live State](https://bcalcos.discourse.group/t/xlibre-logs-tools-and-live-state/110), [6/8 tbd], [7/8 tbd], and [8/8 tbd].
 
 ### SLiM
 
@@ -127,9 +128,10 @@ Users can subsequently customize the system to suit their own needs.
 
 ### Custom installation
 
-BcalcOS includes its own terminal-based installer.
+Versions 1.4 and later: BcalcOS includes its own GUI custom installer.<br>
+Versions 1.3.5 and earlier: BcalcOS includes its own terminal-based installer.
 
-The installer is designed specifically around the BcalcOS system rather than attempting to support a wide range of possible Linux installation scenarios. This keeps the installation process relatively straightforward and beginner-friendly, but it also means the installer makes defined assumptions and has specific limitations. <br>
+The installer is designed specifically around the BcalcOS system rather than attempting to support the widest range of possible Linux installation scenarios. This keeps the installation process relatively straightforward and beginner-friendly, but it also means the installer makes defined assumptions and has specific limitations. <br>
 ![BcalcOS Installer](readmeimages/readme-installer.png)<br>
 
 For a much more in depth discussion, see the BcalcOS Community posts [BcalcOS Installer:  Design Notes & Trade-offs](https://bcalcos.discourse.group/t/bcalcos-installer-design-notes-trade-offs/19), [BcalcOS Installation Process](https://bcalcos.discourse.group/t/bcalcos-installation-process/20), [Before You Install BcalcOS](https://bcalcos.discourse.group/t/before-you-install-bcalcos/22), [What Happens to the Disk?](https://bcalcos.discourse.group/t/what-happens-to-the-disk-during-installation/23), [Encryption Explained](https://bcalcos.discourse.group/t/encryption-explained/24), [Dual Boot Grub Note](https://bcalcos.discourse.group/t/dual-boot-grub-note/49), and [The BcalcOS Filesystem](https://bcalcos.discourse.group/t/the-bcalcos-filesystem/45).
@@ -152,6 +154,7 @@ These currently include applications and scripts such as:
 - Quail Reminder
 - Quail System
 - Quail Converter
+- Quail Scan
 - Update Notifier
 - Fstrim Maintenance<br>
 
@@ -239,6 +242,8 @@ BcalcOS is not intended to be everything to everyone. Users who need application
 The [Why BcalcOS](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignette provides a philosophical answer to why BcalcOS exists.
 
 The [You Probably Don't Need BcalcOS](https://bcalcos.discourse.group/t/you-probably-dont-need-bcalcos/68) post tackles the Who question in more detail.
+
+I discuss expenses associated with BcalcOS in [BcalcOS Expenses] (https://bcalcos.discourse.group/t/bcalcos-expenses/78).  Spoiler alert:  it is very inexpensive.
 
 ---
 

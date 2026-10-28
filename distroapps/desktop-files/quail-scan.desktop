@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quail Scan
+Exec=/usr/bin/quail-scan
+Icon=/usr/share/bcalcosbrand/quail-scan-icon.png
+Terminal=false
+Categories=BcalcOS;

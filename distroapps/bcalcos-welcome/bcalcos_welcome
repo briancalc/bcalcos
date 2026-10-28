@@ -1429,7 +1429,7 @@ class WelcomeApp(Gtk.Window):
 			about = Gtk.AboutDialog(transient_for=self, modal=True)
 			about.set_program_name("BcalcOS Welcome Center")
 			about.set_version("1.4")
-			about.set_comments("BcalcOS application and system resources")
+			about.set_comments("Part of the BcalcOS Project")
 			about.set_license_type(Gtk.License.GPL_3_0)
 			about.run()
 			about.destroy()

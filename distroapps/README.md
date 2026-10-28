@@ -7,6 +7,7 @@
 5. [Quail Reminder](#5-quail-reminder)
 6. [Quail System](#6-quail-system)
 7. [Quail Converter](#7-quail-converter)
+8. [Quail Scan](#8-quail-scan)
 ---
 
 ## 1. Introduction
@@ -21,11 +22,15 @@ Name:  Install BcalcOS
 
 Location: /usr/bin/bcalcos-installer/
 
-Terminal based distribution installer.
-Automatically determines boot method, partition structure, partition sizes, language, and keyboard.
-User selects disk, timezone, user name, and password.
+BcalcOS versions 1.4 and later:  GUI installer.  Terminal installer retired.
+BcalcOS versions 1.3.5 and earlier: terminal based distribution installer.
 
-Only run once to install distribution.
+Under-the-hood remains the same:
+- automatically determines boot method, partition structure, partition sizes, language, and keyboard
+- user selects disk, timezone, user name, /home partition encryption, and password(s)
+
+Only run once to install distribution.<br>
+Warning:  existing data on the drive will be erased.  
 
 ---
 
@@ -37,7 +42,7 @@ Location:  /usr/bin/bcalcos_welcome
 
 GUI application to assist user with installing or removing curated applications, performing basic system functions, and locating resource guides.
 
-Can be run at user's discretion via application menu under BcalcOS.
+Can be run at user's discretion via application menu under BcalcOS category.
 
 ---
 
@@ -73,7 +78,7 @@ Location:  /usr/bin/quail-system
 
 Provides an overview of your computer and BcalcOS installation.
 
-Can be run via application menu under BcalcOS.
+Can be run via application menu under BcalcOS category.
 
 ---
 
@@ -85,6 +90,20 @@ Location:  /usr/bin/quail-converter
 
 Simple app for converting between common units of measurement.
 
-Can be run via application menu under BcalcOS.
+Can be run via application menu under BcalcOS category.
+
+---
+
+## 8. Quail Scan 
+
+Name:  quail-scan
+
+Location:  /usr/bin/quail-scan
+
+GUI interface for ClamAV.
+
+Prerequisite:  perhaps not surprising, ClamAV should be installed first.
+
+Can be run via application menu under BcalcOS category.
 
 ---

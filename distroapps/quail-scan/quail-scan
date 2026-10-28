@@ -1,0 +1,529 @@
+#!/usr/bin/env python3
+"""
+Quail Scan
+v1.0
+GUI interface for ClamAV
+"""
+
+import os
+import queue
+import shutil
+import signal
+import subprocess
+import threading
+import tkinter as tk
+import tkinter.font as tkfont
+from tkinter import filedialog, messagebox, ttk
+
+
+# BcalcOS light-mode palette and fonts
+COLOR_PRIMARY = "#BA7800"
+COLOR_PRIMARY_DARK = "#8A5A00"
+COLOR_PRIMARY_LIGHT = "#D99A28"
+COLOR_PRIMARY_LIGHT_LIGHT = "#EBC978"
+COLOR_BG = "#F5F6F8"
+COLOR_SURFACE = "#FFFFFF"
+COLOR_SURFACE_ALT = "#FBF9F5"
+COLOR_TEXT = "#2C3E50"
+COLOR_TEXT_MUTED = "#68717A"
+COLOR_TEXT_LIGHT = "#9299A0"
+COLOR_BORDER = "#E2E5E8"
+COLOR_BORDER_GOLD = "#E5C88F"
+COLOR_WHITE = "#FFFFFF"
+FONT_PRIMARY = "Inter"
+FONT_HEADING = "Poppins"
+FONT_MONO = "monospace"
+
+
+class QuailScan:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Quail Scan")
+        self.root.geometry("760x650")
+        self.root.minsize(620, 520)
+        self.root.configure(bg=COLOR_BG)
+
+        self.events = queue.Queue()
+        self.scan_running = False
+        self.current_target = None
+        self.current_privileged = False
+        self.scan_process = None
+        self.scan_process_lock = threading.Lock()
+        self.scan_cancel_requested = threading.Event()
+
+        self.font_title = tkfont.Font(family=FONT_HEADING, size=17, weight="bold")
+        self.font_label = tkfont.Font(family=FONT_PRIMARY, size=10)
+        self.font_button = tkfont.Font(family=FONT_PRIMARY, size=10)
+        self.font_output = tkfont.Font(family=FONT_MONO, size=9)
+
+        self._build_interface()
+        self.root.after(100, self._process_events)
+
+    def _build_interface(self):
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(1, weight=1)
+
+        header = tk.Frame(self.root, bg=COLOR_BG)
+        header.grid(row=0, column=0, sticky="ew", padx=24, pady=(20, 0))
+        tk.Label(
+            header, text="Quail Scan", font=self.font_title,
+            fg=COLOR_TEXT, bg=COLOR_BG
+        ).pack(anchor="w")
+        tk.Label(
+            header, text="Scan files and directories with ClamAV",
+            font=self.font_label, fg=COLOR_TEXT_MUTED, bg=COLOR_BG
+        ).pack(anchor="w", pady=(2, 8))
+        tk.Frame(header, height=2, bg=COLOR_PRIMARY_LIGHT).pack(fill="x")
+
+        content = tk.Frame(self.root, bg=COLOR_BG)
+        content.grid(row=1, column=0, sticky="nsew", padx=24, pady=(14, 10))
+        content.columnconfigure(0, weight=1)
+        content.rowconfigure(2, weight=1)
+
+        choices = tk.Frame(
+            content, bg=COLOR_SURFACE, highlightbackground=COLOR_BORDER,
+            highlightthickness=1, padx=16, pady=14
+        )
+        choices.grid(row=0, column=0, sticky="ew")
+        choices.columnconfigure(0, weight=1)
+        choices.columnconfigure(1, weight=1)
+        choices.columnconfigure(2, weight=1)
+
+        tk.Label(
+            choices, text="Choose a scan", font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_SURFACE
+        ).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+
+        self.home_button = self._make_button(
+            choices, "Scan Home", lambda: self._begin_scan(os.path.expanduser("~"), False),
+            primary=False
+        )
+        self.home_button.grid(row=1, column=0, sticky="ew", padx=(0, 5))
+
+        self.root_button = self._make_button(
+            choices, "Scan Root (/) ", lambda: self._begin_scan("/", True),
+            primary=False
+        )
+        self.root_button.grid(row=1, column=1, sticky="ew", padx=5)
+
+        self.file_button = self._make_button(
+            choices, "Scan Specific File", self._choose_file, primary=False
+        )
+        self.file_button.grid(row=1, column=2, sticky="ew", padx=(5, 0))
+
+        status_panel = tk.Frame(
+            content, bg=COLOR_SURFACE_ALT, highlightbackground=COLOR_BORDER_GOLD,
+            highlightthickness=1, padx=12, pady=9
+        )
+        status_panel.grid(row=1, column=0, sticky="ew", pady=(12, 12))
+        tk.Label(
+            status_panel, text="Status:", font=self.font_label,
+            fg=COLOR_TEXT_MUTED, bg=COLOR_SURFACE_ALT
+        ).pack(side="left")
+        self.status_var = tk.StringVar(value="Ready")
+        self.status_label = tk.Label(
+            status_panel, textvariable=self.status_var, font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_SURFACE_ALT, anchor="w"
+        )
+        self.status_label.pack(side="left", padx=(8, 0), fill="x", expand=True)
+        self.progress = ttk.Progressbar(
+            status_panel, mode="indeterminate", length=110
+        )
+        self.cancel_button = self._make_button(
+            status_panel, "Cancel Scan", self._cancel_scan, primary=False
+        )
+        self.cancel_button.pack(side="right", padx=(12, 0))
+        self.cancel_button.configure(state="disabled")
+        self.progress.pack(side="right", padx=(12, 0))
+
+        results = tk.Frame(
+            content, bg=COLOR_SURFACE, highlightbackground=COLOR_BORDER,
+            highlightthickness=1
+        )
+        results.grid(row=2, column=0, sticky="nsew")
+        results.columnconfigure(0, weight=1)
+        results.rowconfigure(1, weight=1)
+        tk.Label(
+            results, text="Scan Results", font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_SURFACE, anchor="w"
+        ).grid(row=0, column=0, sticky="ew", padx=14, pady=(10, 6))
+
+        output_frame = tk.Frame(results, bg=COLOR_SURFACE)
+        output_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        output_frame.columnconfigure(0, weight=1)
+        output_frame.rowconfigure(0, weight=1)
+        self.output = tk.Text(
+            output_frame, wrap="word", font=self.font_output,
+            fg=COLOR_TEXT, bg=COLOR_SURFACE, relief="flat",
+            padx=8, pady=8, state="disabled"
+        )
+        scrollbar = tk.Scrollbar(output_frame, orient="vertical", command=self.output.yview)
+        self.output.configure(yscrollcommand=scrollbar.set)
+        self.output.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self._set_output(
+            "Choose a scan above.\n\n"
+	    "Quail Scan will update ClamAV definitions first.\n"
+            "You will have to enter your admin password; twice for root.\n"
+            "Quail Scan reports only, it does not delete or quarantine."
+        )
+
+        footer = tk.Frame(self.root, bg=COLOR_BG)
+        footer.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 20))
+        footer.columnconfigure(0, weight=1)
+        self.menu_button = self._make_button(footer, "☰", self._show_menu)
+        self.menu_button.grid(row=0, column=0, sticky="e")
+
+        self.menu = tk.Menu(
+            self.root, tearoff=0,
+            bg=COLOR_SURFACE, fg=COLOR_TEXT,
+            activebackground=COLOR_PRIMARY_LIGHT_LIGHT,
+            activeforeground=COLOR_TEXT,
+            font=self.font_label
+        )
+        self.menu.add_command(label="About", command=self._show_about)
+        self.menu.add_command(label="Close", command=self.root.destroy)
+
+        self.scan_buttons = [self.home_button, self.root_button, self.file_button]
+
+    def _make_button(self, parent, text, command, primary=False):
+        # Use a lighter gold for the primary button's normal state so its
+        # darker-gold hover state is visibly distinct.
+        normal_bg = COLOR_PRIMARY_LIGHT if primary else COLOR_SURFACE_ALT
+        hover_bg = COLOR_PRIMARY_DARK if primary else COLOR_PRIMARY_LIGHT_LIGHT
+        button = tk.Button(
+            parent, text=text, command=command, font=self.font_button,
+            fg=COLOR_WHITE if primary else COLOR_TEXT,
+            bg=normal_bg,
+            activeforeground=COLOR_WHITE if primary else COLOR_TEXT,
+            activebackground=hover_bg,
+            relief="flat", bd=0, highlightthickness=1,
+            highlightbackground=COLOR_BORDER_GOLD if primary else COLOR_BORDER,
+            highlightcolor=COLOR_PRIMARY, padx=10, pady=8, cursor="hand2"
+        )
+        button.bind("<Enter>", lambda event: button.configure(bg=hover_bg))
+        button.bind("<Leave>", lambda event: button.configure(bg=normal_bg))
+        return button
+
+    def _show_menu(self):
+        try:
+            self.menu.update_idletasks()
+            x = self.menu_button.winfo_rootx()
+            y = self.menu_button.winfo_rooty() - self.menu.winfo_reqheight()
+            self.menu.tk_popup(x, y)
+        finally:
+            self.menu.grab_release()
+
+    def _show_about(self):
+        about = tk.Toplevel(self.root)
+        about.title("About Quail Scan")
+        about.configure(bg=COLOR_BG)
+        about.transient(self.root)
+        about.resizable(False, False)
+
+        message = tk.Label(
+            about,
+            text=(
+                "Quail Scan\n"
+                "A simple GUI for ClamAV.\n\n"
+                "Version 1.0\n"
+                "Part of the BcalcOS project."
+            ),
+            bg=COLOR_BG,
+            fg=COLOR_TEXT,
+            font=(FONT_PRIMARY, 11),
+            justify="left",
+            padx=24,
+            pady=20
+        )
+        message.pack()
+
+        ok_button = tk.Button(
+            about,
+            text="OK",
+            command=about.destroy,
+            font=(FONT_PRIMARY, 10),
+            fg=COLOR_TEXT,
+            bg=COLOR_SURFACE_ALT,
+            activeforeground=COLOR_TEXT,
+            activebackground=COLOR_PRIMARY_LIGHT_LIGHT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER,
+            padx=10,
+            pady=6,
+            cursor="hand2"
+        )
+        ok_button.pack(pady=(0, 14))
+
+        about.update_idletasks()
+        x = self.root.winfo_rootx() + (
+            self.root.winfo_width() - about.winfo_width()
+        ) // 2
+        y = self.root.winfo_rooty() + (
+            self.root.winfo_height() - about.winfo_height()
+        ) // 2
+        about.geometry(f"+{x}+{y}")
+
+        about.grab_set()
+        ok_button.focus_set()
+
+        about.bind("<Escape>", lambda event: about.destroy())
+        about.bind("<Return>", lambda event: about.destroy())
+
+    def _choose_file(self):
+        if self.scan_running:
+            return
+        path = filedialog.askopenfilename(parent=self.root, title="Choose a file to scan")
+        if path:
+            self._begin_scan(path, False, single_file=True)
+
+    def _begin_scan(self, target, privileged, single_file=False, update_first=True):
+        if self.scan_running:
+            return
+
+        clamscan = shutil.which("clamscan")
+        freshclam = shutil.which("freshclam")
+        pkexec = shutil.which("pkexec")
+        if not clamscan or not freshclam:
+            messagebox.showerror(
+                "Quail Scan", "ClamAV tools were not found. Please check that ClamAV is installed.",
+                parent=self.root
+            )
+            return
+        if (privileged or update_first) and not pkexec:
+            messagebox.showerror(
+                "Quail Scan", "pkexec was not found, so Quail Scan cannot request administrator authorization.",
+                parent=self.root
+            )
+            return
+
+        self.current_target = target
+        self.current_privileged = privileged
+        self.current_single_file = single_file
+        self.scan_running = True
+        self.scan_cancel_requested.clear()
+        self._set_buttons_enabled(False)
+        self.cancel_button.configure(state="disabled")
+        self.progress.start(10)
+        if update_first:
+            self._set_output("")
+        self.status_var.set("Updating virus definitions…" if update_first else "Starting scan…")
+        thread = threading.Thread(
+            target=self._scan_worker,
+            args=(target, privileged, single_file, update_first),
+            daemon=True
+        )
+        thread.start()
+
+    def _scan_worker(self, target, privileged, single_file, update_first):
+        freshclam = shutil.which("freshclam")
+        clamscan = shutil.which("clamscan")
+        pkexec = shutil.which("pkexec")
+
+        if update_first:
+            update_cmd = [pkexec, freshclam]
+            update_result = self._run_command(update_cmd)
+            if update_result.returncode != 0:
+                self.events.put((
+                    "update_failed", target, privileged, single_file,
+                    self._combined_output(update_result)
+                ))
+                return
+
+        self.events.put(("status", "Scanning " + ("specific file" if single_file else target) + "…"))
+
+        # Directory scans list only detections plus ClamAV's summary, not every clean file.
+        # A single-file scan also displays that file's result, including a clean result.
+        command = [clamscan]
+        if not single_file:
+            command.append("--infected")
+        if not single_file:
+            command.append("--recursive")
+        if privileged and target == "/":
+            command.extend([
+                "--exclude-dir=^/proc(/|$)",
+                "--exclude-dir=^/sys(/|$)",
+                "--exclude-dir=^/dev(/|$)",
+            ])
+        command.append(target)
+        if privileged:
+            command = [pkexec] + command
+
+        result, cancelled = self._run_scan_command(command)
+        self.events.put(("scan_finished", self._combined_output(result), result.returncode, cancelled))
+
+    @staticmethod
+    def _run_command(command):
+        try:
+            return subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, errors="replace", check=False
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            return subprocess.CompletedProcess(command, 127, stdout=f"Could not run command: {exc}")
+
+    def _run_scan_command(self, command):
+        try:
+            process = subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, errors="replace", start_new_session=True
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            result = subprocess.CompletedProcess(
+                command, 127, stdout=f"Could not run command: {exc}"
+            )
+            return result, False
+
+        with self.scan_process_lock:
+            self.scan_process = process
+            cancel_now = self.scan_cancel_requested.is_set()
+        self.events.put(("scan_started",))
+        if cancel_now:
+            self._terminate_scan_process(process, privileged=self.current_privileged)
+
+        try:
+            stdout, _ = process.communicate()
+            result = subprocess.CompletedProcess(command, process.returncode, stdout=stdout or "")
+        finally:
+            with self.scan_process_lock:
+                if self.scan_process is process:
+                    self.scan_process = None
+        return result, self.scan_cancel_requested.is_set()
+
+    @staticmethod
+    def _terminate_scan_process(process, privileged=False):
+        if privileged:
+            # The GUI runs as the desktop user, but pkexec runs clamscan as
+            # root. Sending a signal directly from this process can fail with
+            # PermissionError. Ask pkexec to signal only the exact PID that
+            # Popen launched (pkexec execs clamscan, preserving that PID).
+            pkexec = shutil.which("pkexec")
+            if pkexec:
+                try:
+                    subprocess.Popen(
+                        [pkexec, "/bin/kill", "-TERM", str(process.pid)],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True,
+                    )
+                    return
+                except OSError:
+                    pass
+            return
+
+        # Unprivileged scans can be terminated directly by the GUI user.
+        try:
+            process.send_signal(signal.SIGTERM)
+        except (ProcessLookupError, OSError):
+            pass
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except (ProcessLookupError, OSError):
+            pass
+
+    def _cancel_scan(self):
+        if not self.scan_running:
+            return
+        self.scan_cancel_requested.set()
+        with self.scan_process_lock:
+            process = self.scan_process
+        if process is not None:
+            self._terminate_scan_process(
+                process, privileged=self.current_privileged
+            )
+        self.cancel_button.configure(state="disabled")
+        self.status_var.set("Cancelling scan…")
+
+    @staticmethod
+    def _combined_output(result):
+        return (result.stdout or "").strip() or "(The command produced no output.)"
+
+    def _process_events(self):
+        try:
+            while True:
+                event = self.events.get_nowait()
+                kind = event[0]
+
+                if kind == "status":
+                    self.status_var.set(event[1])
+
+                elif kind == "update_failed":
+                    _, target, privileged, single_file, output = event
+                    self.progress.stop()
+                    self._append_output(
+                        "Virus-definition update failed.\n"
+                        "ClamAV may be using existing definitions.\n\n"
+                        + output + "\n\n"
+                    )
+                    proceed = messagebox.askyesno(
+                        "Definition Update Failed",
+                        "Quail Scan could not update the virus definitions.\n\n"
+                        "Would you like to continue the scan using the definitions currently installed?",
+                        parent=self.root
+                    )
+                    self.scan_running = False
+                    self.cancel_button.configure(state="disabled")
+                    if proceed:
+                        self._begin_scan(target, privileged, single_file, update_first=False)
+                    else:
+                        self.status_var.set("Scan cancelled")
+                        self._set_buttons_enabled(True)
+
+                elif kind == "scan_started":
+                    if self.scan_running and not self.scan_cancel_requested.is_set():
+                        self.cancel_button.configure(state="normal")
+
+                elif kind == "scan_finished":
+                    _, output, returncode, cancelled = event
+                    self.progress.stop()
+                    self._append_output(output)
+                    if cancelled:
+                        self.status_var.set("Scan cancelled by user")
+                        self._append_output("Scan cancelled by user. Results may be incomplete.")
+                    elif returncode == 0:
+                        self.status_var.set("Scan complete")
+                    elif returncode == 1:
+                        self.status_var.set("Scan complete: infected files detected")
+                    else:
+                        self.status_var.set(f"Scan ended with error (exit code {returncode})")
+                    self.cancel_button.configure(state="disabled")
+                    self._set_buttons_enabled(True)
+                    self.scan_running = False
+        except queue.Empty:
+            pass
+
+        self.root.after(100, self._process_events)
+
+    def _set_output(self, text):
+        self.output.configure(state="normal")
+        self.output.delete("1.0", "end")
+        if text:
+            self.output.insert("end", text + "\n")
+        self.output.configure(state="disabled")
+        self.output.see("end")
+
+    def _append_output(self, text):
+        self.output.configure(state="normal")
+        if self.output.get("1.0", "end-1c").strip():
+            self.output.insert("end", "\n")
+        self.output.insert("end", text + "\n")
+        self.output.configure(state="disabled")
+        self.output.see("end")
+
+    def _set_buttons_enabled(self, enabled):
+        state = "normal" if enabled else "disabled"
+        for button in self.scan_buttons:
+            button.configure(state=state)
+
+
+def main():
+    root = tk.Tk()
+    QuailScan(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
