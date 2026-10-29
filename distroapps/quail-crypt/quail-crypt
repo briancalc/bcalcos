@@ -1,0 +1,681 @@
+#!/usr/bin/env python3
+"""
+Quail Crypt
+Version 1.0
+A simple graphical front end for the existing gocryptfs utility.
+"""
+
+import os
+import shutil
+import subprocess
+import tkinter as tk
+import tkinter.font as tkfont
+
+# BcalcOS light-mode palette and fonts, matching Quail Scan.
+COLOR_PRIMARY = "#BA7800"
+COLOR_PRIMARY_DARK = "#8A5A00"
+COLOR_PRIMARY_LIGHT = "#D99A28"
+COLOR_PRIMARY_LIGHT_LIGHT = "#EBC978"
+COLOR_BG = "#F5F6F8"
+COLOR_SURFACE = "#FFFFFF"
+COLOR_SURFACE_ALT = "#FBF9F5"
+COLOR_TEXT = "#2C3E50"
+COLOR_TEXT_MUTED = "#68717A"
+COLOR_BORDER = "#E2E5E8"
+COLOR_BORDER_GOLD = "#E5C88F"
+COLOR_WHITE = "#FFFFFF"
+FONT_PRIMARY = "Inter"
+FONT_HEADING = "Poppins"
+FONT_MONO = "monospace"
+
+VERSION = "1.0.7"
+CIPHER_DIR = os.path.expanduser("~/encrypted")
+PLAIN_DIR = os.path.expanduser("~/private")
+
+
+class QuailCrypt:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Quail Crypt")
+        self.root.geometry("700x650")
+        self.root.minsize(620, 610)
+        self.root.configure(bg=COLOR_BG)
+
+        self.font_title = tkfont.Font(family=FONT_HEADING, size=17, weight="bold")
+        self.font_label = tkfont.Font(family=FONT_PRIMARY, size=10)
+        self.font_button = tkfont.Font(family=FONT_PRIMARY, size=10)
+        self.font_path = tkfont.Font(family=FONT_MONO, size=9)
+
+        self.gocryptfs = shutil.which("gocryptfs")
+        self._build_interface()
+        self.root.protocol("WM_DELETE_WINDOW", self.close_app)
+        self._ensure_directories()
+        self.refresh_status()
+
+    def _build_interface(self):
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(1, weight=1)
+
+        header = tk.Frame(self.root, bg=COLOR_BG)
+        header.grid(row=0, column=0, sticky="ew", padx=24, pady=(20, 0))
+        tk.Label(header, text="Quail Crypt", font=self.font_title,
+                 fg=COLOR_TEXT, bg=COLOR_BG).pack(anchor="w")
+        tk.Label(header, text="Manage your encrypted folder with gocryptfs",
+                 font=self.font_label, fg=COLOR_TEXT_MUTED,
+                 bg=COLOR_BG).pack(anchor="w", pady=(2, 8))
+        tk.Frame(header, height=2, bg=COLOR_PRIMARY_LIGHT).pack(fill="x")
+
+        content = tk.Frame(self.root, bg=COLOR_BG)
+        content.grid(row=1, column=0, sticky="nsew", padx=24, pady=(14, 10))
+        content.columnconfigure(0, weight=1)
+
+        status_panel = tk.Frame(
+            content, bg=COLOR_SURFACE_ALT, highlightbackground=COLOR_BORDER_GOLD,
+            highlightthickness=1, padx=14, pady=12
+        )
+        status_panel.grid(row=0, column=0, sticky="ew", pady=(0, 12))
+        status_panel.columnconfigure(1, weight=1)
+        tk.Label(status_panel, text="Encryption Status", font=self.font_label,
+                 fg=COLOR_TEXT_MUTED, bg=COLOR_SURFACE_ALT).grid(
+                     row=0, column=0, sticky="w")
+        self.status_var = tk.StringVar(value="Checking…")
+        self.status_label = tk.Label(
+            status_panel, textvariable=self.status_var, font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_SURFACE_ALT, anchor="e"
+        )
+        self.status_label.grid(row=0, column=1, sticky="e")
+        self.detail_var = tk.StringVar(value="")
+        tk.Label(status_panel, textvariable=self.detail_var, font=self.font_label,
+                 fg=COLOR_TEXT_MUTED, bg=COLOR_SURFACE_ALT,
+                 anchor="w", justify="left", wraplength=580).grid(
+                     row=1, column=0, columnspan=2, sticky="ew", pady=(7, 0))
+
+        paths = tk.Frame(content, bg=COLOR_SURFACE,
+                         highlightbackground=COLOR_BORDER, highlightthickness=1,
+                         padx=14, pady=12)
+        paths.grid(row=1, column=0, sticky="ew", pady=(0, 12))
+        paths.columnconfigure(1, weight=1)
+        tk.Label(paths, text="ENCRYPTED DIRECTORY", font=self.font_label,
+                 fg=COLOR_TEXT_MUTED, bg=COLOR_SURFACE).grid(
+                     row=0, column=0, columnspan=2, sticky="w", pady=(0, 3))
+        tk.Label(paths, text="🔒", font=(FONT_PRIMARY, 15), fg=COLOR_TEXT,
+                 bg=COLOR_SURFACE).grid(row=1, column=0, sticky="w", padx=(0, 9))
+        tk.Label(paths, text="~/encrypted", font=self.font_path, fg=COLOR_TEXT,
+                 bg=COLOR_SURFACE, anchor="w").grid(row=1, column=1, sticky="ew")
+        tk.Frame(paths, height=1, bg=COLOR_BORDER).grid(
+            row=2, column=0, columnspan=2, sticky="ew", pady=10)
+        tk.Label(paths, text="PRIVATE DIRECTORY", font=self.font_label,
+                 fg=COLOR_TEXT_MUTED, bg=COLOR_SURFACE).grid(
+                     row=3, column=0, columnspan=2, sticky="w", pady=(0, 3))
+        tk.Label(paths, text="📁", font=(FONT_PRIMARY, 15), fg=COLOR_TEXT,
+                 bg=COLOR_SURFACE).grid(row=4, column=0, sticky="w", padx=(0, 9))
+        tk.Label(paths, text="~/private", font=self.font_path, fg=COLOR_TEXT,
+                 bg=COLOR_SURFACE, anchor="w").grid(row=4, column=1, sticky="ew")
+
+        actions = tk.Frame(content, bg=COLOR_BG)
+        actions.grid(row=2, column=0, sticky="ew")
+        actions.columnconfigure(0, weight=1)
+        actions.columnconfigure(1, weight=1)
+        self.primary_button = self._make_button(
+            actions, "Unlock Encrypted Folder", lambda: self._run_action(self.unlock))
+        self.primary_button.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=(0, 8))
+        self.create_button = self._make_button(
+            actions, "Create Encrypted Folder", lambda: self._run_action(self.create_encrypted_folder))
+        self.create_button.grid(row=0, column=1, sticky="ew", padx=(5, 0), pady=(0, 8))
+        self.open_button = self._make_button(
+            actions, "Open Private Folder", lambda: self._run_action(self.open_private_folder))
+        self.open_button.grid(row=1, column=0, sticky="ew", padx=(0, 5))
+        self.refresh_button = self._make_button(
+            actions, "Refresh Status", lambda: self._run_action(self.refresh_status))
+        self.refresh_button.grid(row=1, column=1, sticky="ew", padx=(5, 0))
+
+        footer = tk.Frame(self.root, bg=COLOR_BG)
+        footer.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 18))
+        footer.columnconfigure(0, weight=1)
+        tk.Label(
+            footer,
+            text="Work with your files in the PRIVATE folder.",
+            font=self.font_label, fg=COLOR_TEXT_MUTED, bg=COLOR_BG,
+            anchor="w", justify="left"
+        ).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        self.menu_button = self._make_button(footer, "☰", self._show_menu)
+        self.menu_button.grid(row=0, column=1, sticky="e")
+        self.menu = tk.Menu(
+            self.root, tearoff=0, bg=COLOR_SURFACE, fg=COLOR_TEXT,
+            activebackground=COLOR_PRIMARY_LIGHT_LIGHT,
+            activeforeground=COLOR_TEXT, font=self.font_label
+        )
+        self.menu.add_command(label="About", command=self._show_about)
+        self.menu.add_command(label="Close", command=self.close_app)
+
+    def _show_dialog(self, title, message, kind="info", parent=None, confirm=False,
+                     confirm_label="Continue"):
+        """Show a BcalcOS-styled information, error, or confirmation dialog."""
+        owner = parent or self.root
+        dialog = tk.Toplevel(owner)
+        dialog.title(title)
+        dialog.configure(bg=COLOR_BG)
+        dialog.transient(owner)
+        dialog.resizable(False, False)
+
+        heading = title.strip() or "Quail Crypt"
+        heading_color = "#9B2C2C" if kind in ("error", "warning") else COLOR_TEXT
+        tk.Label(
+            dialog, text=heading, font=(FONT_HEADING, 13, "bold"),
+            fg=heading_color, bg=COLOR_BG
+        ).pack(anchor="w", padx=18, pady=(16, 8))
+
+        message_label = tk.Label(
+            dialog, text=message, font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_BG, justify="left", anchor="w",
+            wraplength=460
+        )
+        message_label.pack(fill="x", padx=18, pady=(0, 16))
+
+        result = {"confirmed": False}
+
+        def finish(value=False):
+            result["confirmed"] = value
+            if dialog.winfo_exists():
+                dialog.destroy()
+
+        buttons = tk.Frame(dialog, bg=COLOR_BG)
+        buttons.pack(fill="x", padx=18, pady=(0, 16))
+        if confirm:
+            self._make_button(buttons, "Cancel", lambda: finish(False)).pack(
+                side="right", padx=(6, 0))
+            self._make_button(
+                buttons, confirm_label, lambda: finish(True), primary=True
+            ).pack(side="right")
+        else:
+            self._make_button(buttons, "OK", lambda: finish(False)).pack(side="right")
+
+        dialog.protocol("WM_DELETE_WINDOW", lambda: finish(False))
+        dialog.bind("<Escape>", lambda event: finish(False))
+        if confirm:
+            dialog.bind("<Return>", lambda event: finish(True))
+        else:
+            dialog.bind("<Return>", lambda event: finish(False))
+        dialog.update_idletasks()
+        x = owner.winfo_rootx() + (owner.winfo_width() - dialog.winfo_width()) // 2
+        y = owner.winfo_rooty() + (owner.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{max(0, x)}+{max(0, y)}")
+        dialog.grab_set()
+        dialog.focus_set()
+        owner.wait_window(dialog)
+        return result["confirmed"]
+
+    def close_app(self):
+        """Remind the user if the private directory is still mounted at exit."""
+        if self._mounted(PLAIN_DIR):
+            close_anyway = self._show_dialog(
+                "Private Folder Is Unlocked",
+                "Your private folder is still unlocked and accessible. Closing "
+                "Quail Crypt will not lock or unmount it.\n\n"
+                "If you are finished working, cancel this dialog and use "
+                "Lock Encrypted Folder first.\n\n"
+                "Do you want to close Quail Crypt anyway?",
+                kind="warning", parent=self.root, confirm=True,
+                confirm_label="Close Anyway",
+            )
+            if not close_anyway:
+                return
+        self.root.destroy()
+
+    def _run_action(self, action):
+        """Keep callback failures visible in the GUI instead of silently failing."""
+        try:
+            action()
+        except Exception as exc:
+            # Tkinter normally prints callback exceptions to stderr. Show the
+            # error in a dialog as well so users are not left guessing.
+            try:
+                self._set_status("Error", f"The action could not be completed: {exc}")
+                self._show_dialog(
+                    "Action Failed",
+                    f"The requested action could not be completed.\n\n{type(exc).__name__}: {exc}",
+                    kind="error", parent=self.root,
+                )
+            except Exception:
+                pass
+
+    def _make_button(self, parent, text, command, primary=False):
+        normal_bg = COLOR_PRIMARY_LIGHT if primary else COLOR_SURFACE_ALT
+        hover_bg = COLOR_PRIMARY_DARK if primary else COLOR_PRIMARY_LIGHT_LIGHT
+        button = tk.Button(
+            parent, text=text, command=command, font=self.font_button,
+            fg=COLOR_WHITE if primary else COLOR_TEXT, bg=normal_bg,
+            activeforeground=COLOR_WHITE if primary else COLOR_TEXT,
+            activebackground=hover_bg, relief="flat", bd=0,
+            highlightthickness=1,
+            highlightbackground=COLOR_BORDER_GOLD if primary else COLOR_BORDER,
+            highlightcolor=COLOR_PRIMARY, padx=10, pady=8, cursor="hand2"
+        )
+        button.bind("<Enter>", lambda event: button.configure(bg=hover_bg))
+        button.bind("<Leave>", lambda event: button.configure(bg=normal_bg))
+        return button
+
+    def _show_menu(self):
+        try:
+            self.menu.update_idletasks()
+            x = self.menu_button.winfo_rootx()
+            y = self.menu_button.winfo_rooty() - self.menu.winfo_reqheight()
+            self.menu.tk_popup(x, y)
+        finally:
+            self.menu.grab_release()
+
+    def _show_about(self):
+        about = tk.Toplevel(self.root)
+        about.title("About Quail Crypt")
+        about.configure(bg=COLOR_BG)
+        about.transient(self.root)
+        about.resizable(False, False)
+        tk.Label(
+            about,
+            text=("Quail Crypt\n"
+                  "A simple graphical interface for gocryptfs.\n\n"
+                  f"Version {VERSION}\n"
+                  "Part of the BcalcOS project.\n\n"
+                  "Encryption and filesystem operations are performed by gocryptfs."),
+            bg=COLOR_BG, fg=COLOR_TEXT, font=(FONT_PRIMARY, 11),
+            justify="left", padx=24, pady=20
+        ).pack()
+        ok_button = self._make_button(about, "OK", about.destroy)
+        ok_button.pack(pady=(0, 14))
+        about.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() - about.winfo_width()) // 2
+        y = self.root.winfo_rooty() + (self.root.winfo_height() - about.winfo_height()) // 2
+        about.geometry(f"+{x}+{y}")
+        about.grab_set()
+        ok_button.focus_set()
+        about.bind("<Escape>", lambda event: about.destroy())
+        about.bind("<Return>", lambda event: about.destroy())
+
+    @staticmethod
+    def _mounted(path):
+        """Check the current process's mount table for this exact mountpoint."""
+        wanted = os.path.realpath(path)
+        try:
+            with open("/proc/self/mountinfo", "r", encoding="utf-8") as mountinfo:
+                for line in mountinfo:
+                    fields = line.split()
+                    if len(fields) > 4:
+                        # mountinfo encodes whitespace and backslashes as octal escapes.
+                        mountpoint = fields[4]
+                        for encoded, decoded in (("\\040", " "), ("\\011", "\t"),
+                                                 ("\\012", "\n"), ("\\134", "\\")):
+                            mountpoint = mountpoint.replace(encoded, decoded)
+                        if os.path.realpath(mountpoint) == wanted:
+                            return True
+        except OSError:
+            return os.path.ismount(path)
+        return False
+
+    def _ensure_directories(self):
+        try:
+            for path in (CIPHER_DIR, PLAIN_DIR):
+                if os.path.lexists(path) and (os.path.islink(path) or not os.path.isdir(path)):
+                    raise OSError(f"{path} exists but is not a normal directory.")
+                os.makedirs(path, mode=0o700, exist_ok=True)
+        except OSError as exc:
+            self._show_dialog(
+                "Quail Crypt", f"Could not prepare the required directories:\n\n{exc}",
+                kind="error", parent=self.root
+            )
+
+    def _has_config(self):
+        return os.path.isfile(os.path.join(CIPHER_DIR, "gocryptfs.conf"))
+
+    def refresh_status(self):
+        if not os.path.isdir(CIPHER_DIR) or not os.path.isdir(PLAIN_DIR):
+            self._set_status("Error", "The required directories could not be prepared.")
+            return
+        if self._mounted(PLAIN_DIR):
+            self._set_status("Unlocked", "The encrypted filesystem is mounted at ~/private.")
+            self.primary_button.configure(text="Lock Encrypted Folder", command=self.lock)
+            self.open_button.configure(state="normal")
+            self.create_button.configure(state="disabled")
+            return
+
+        self.primary_button.configure(text="Unlock Encrypted Folder", command=self.unlock)
+        self.open_button.configure(state="disabled")
+        if self._has_config():
+            if not self.gocryptfs:
+                self._set_status("Unavailable", "gocryptfs was not found. Install it before unlocking.")
+                self.create_button.configure(state="disabled")
+                return
+            result = self._run([self.gocryptfs, "-info", CIPHER_DIR])
+            if result.returncode == 0:
+                self._set_status("Locked", "The encrypted filesystem is ready to unlock.")
+                self.create_button.configure(state="disabled")
+            else:
+                self._set_status("Error", "gocryptfs could not read the filesystem configuration. Check the encrypted directory.")
+                self.create_button.configure(state="disabled")
+        else:
+            try:
+                entries = os.listdir(CIPHER_DIR)
+            except OSError as exc:
+                self._set_status("Error", f"Cannot inspect the encrypted directory: {exc}")
+                self.create_button.configure(state="disabled")
+                return
+            if entries:
+                self._set_status("Setup blocked", "~/encrypted contains files but no gocryptfs.conf. Quail Crypt will not initialize over them.")
+                self.create_button.configure(state="disabled")
+            elif not self.gocryptfs:
+                self._set_status("Unavailable", "gocryptfs was not found. Install it before creating an encrypted folder.")
+                self.create_button.configure(state="disabled")
+            else:
+                self._set_status("Not configured", "Create an encrypted filesystem to get started.")
+                self.create_button.configure(state="normal")
+
+    def _set_status(self, status, detail):
+        self.status_var.set(status)
+        self.detail_var.set(detail)
+        color = COLOR_TEXT
+        if status == "Unlocked":
+            color = "#26723A"
+        elif status in ("Error", "Setup blocked", "Unavailable"):
+            color = "#9B2C2C"
+        elif status == "Not configured":
+            color = COLOR_PRIMARY_DARK
+        self.status_label.configure(fg=color)
+
+    @staticmethod
+    def _run(command, password=None):
+        """Run a gocryptfs command without a shell; never put passwords in argv."""
+        try:
+            payload = None if password is None else (password + "\n").encode("utf-8")
+            return subprocess.run(
+                command, input=payload, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=False, check=False,
+                timeout=180
+            )
+        except subprocess.TimeoutExpired:
+            class Result:
+                returncode = 124
+                stdout = b"The command timed out."
+            return Result()
+        except OSError as exc:
+            class Result:
+                returncode = 127
+                stdout = str(exc).encode("utf-8", errors="replace")
+            return Result()
+
+    @staticmethod
+    def _output(result):
+        data = result.stdout or b""
+        if isinstance(data, bytes):
+            return data.decode("utf-8", errors="replace").strip()
+        return str(data).strip()
+
+    def create_encrypted_folder(self):
+        # Update the visible status immediately. This also makes it obvious
+        # that the button's callback was reached before any modal dialog opens.
+        self._set_status("Setup", "Preparing encrypted-folder creation…")
+        self.root.update_idletasks()
+        if not self.gocryptfs:
+            self._show_dialog("Quail Crypt", "gocryptfs was not found.", kind="error", parent=self.root)
+            return
+        if self._mounted(PLAIN_DIR):
+            self._show_dialog("Quail Crypt", "The private directory is mounted. Lock it before setup.", kind="error", parent=self.root)
+            self.refresh_status()
+            return
+        if self._has_config():
+            self._show_dialog("Quail Crypt", "An encrypted filesystem already exists. Quail Crypt will not initialize it again.", kind="info", parent=self.root)
+            self.refresh_status()
+            return
+        try:
+            cipher_entries = os.listdir(CIPHER_DIR)
+            plain_entries = os.listdir(PLAIN_DIR)
+        except OSError as exc:
+            self._show_dialog("Quail Crypt", f"Could not inspect the directories:\n\n{exc}", kind="error", parent=self.root)
+            return
+        if cipher_entries:
+            self._show_dialog("Setup blocked", "~/encrypted is not empty and has no gocryptfs.conf. Nothing has been changed.", kind="error", parent=self.root)
+            self.refresh_status()
+            return
+        if plain_entries:
+            self._show_dialog("Setup blocked", "~/private is not empty. Move or preserve its contents before creating the encrypted filesystem; Quail Crypt will not mount over them.", kind="error", parent=self.root)
+            return
+
+        confirmed = self._show_dialog(
+            "Create Encrypted Folder",
+            "This will initialize ~/encrypted as a new gocryptfs encrypted filesystem.\n\n"
+            "Use a strong passphrase and keep a secure backup of your data. "
+            "If you lose the passphrase, your files may be unrecoverable.\n\n"
+            "Continue?",
+            kind="warning", parent=self.root, confirm=True,
+        )
+        if not confirmed:
+            self.refresh_status()
+            return
+        password = self._ask_new_password()
+        if password is None:
+            self.refresh_status()
+            return
+        self._busy(True, "Initializing encrypted filesystem…")
+        try:
+            result = self._run([self.gocryptfs, "-init", "-passfile", "/dev/stdin", CIPHER_DIR], password)
+        finally:
+            password = None
+            self._busy(False)
+        output = self._output(result)
+        if result.returncode == 0 and self._has_config():
+            self._show_dialog("Quail Crypt", "The encrypted filesystem was created successfully. Keep your passphrase safe.", kind="info", parent=self.root)
+        else:
+            self._show_dialog("Creation Failed", "gocryptfs could not initialize the encrypted filesystem.\n\n"
+                              + (output or "No details were provided.") + "\n\nNo existing files were overwritten by Quail Crypt.",
+                              kind="error", parent=self.root)
+        self.refresh_status()
+
+    def _ask_new_password(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Set Passphrase")
+        dialog.configure(bg=COLOR_BG)
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        dialog.grab_set()
+        tk.Label(dialog, text="Choose a strong passphrase", font=(FONT_PRIMARY, 11, "bold"),
+                 fg=COLOR_TEXT, bg=COLOR_BG).pack(anchor="w", padx=18, pady=(16, 8))
+        tk.Label(dialog, text="Passphrase", font=self.font_label, fg=COLOR_TEXT,
+                 bg=COLOR_BG).pack(anchor="w", padx=18)
+        first = tk.Entry(dialog, show="•", width=36, font=self.font_label, relief="solid", bd=1)
+        first.pack(padx=18, pady=(3, 10))
+        tk.Label(dialog, text="Confirm passphrase", font=self.font_label, fg=COLOR_TEXT,
+                 bg=COLOR_BG).pack(anchor="w", padx=18)
+        second = tk.Entry(dialog, show="•", width=36, font=self.font_label, relief="solid", bd=1)
+        second.pack(padx=18, pady=(3, 12))
+        result = {"password": None}
+
+        def show_validation_error(title, message):
+            self._show_dialog(title, message, kind="error", parent=dialog)
+            if dialog.winfo_exists():
+                dialog.grab_set()
+                first.focus_set()
+
+        def accept(event=None):
+            one, two = first.get(), second.get()
+            if not one:
+                show_validation_error("Passphrase Required", "Enter a passphrase.")
+            elif "\n" in one or "\r" in one:
+                show_validation_error("Invalid Passphrase", "Passphrases cannot contain a newline.")
+            elif one != two:
+                show_validation_error("Passphrases Do Not Match", "Enter the same passphrase in both fields.")
+            else:
+                result["password"] = one
+                dialog.destroy()
+
+        buttons = tk.Frame(dialog, bg=COLOR_BG)
+        buttons.pack(fill="x", padx=18, pady=(0, 16))
+        self._make_button(buttons, "Cancel", dialog.destroy).pack(side="right", padx=(6, 0))
+        self._make_button(buttons, "Create", accept, primary=True).pack(side="right")
+        dialog.bind("<Return>", accept)
+        dialog.bind("<Escape>", lambda event: dialog.destroy())
+        first.focus_set()
+        self.root.wait_window(dialog)
+        return result["password"]
+
+    def _ask_unlock_password(self):
+        """Show a BcalcOS-styled passphrase dialog for unlocking."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Unlock Encrypted Folder")
+        dialog.configure(bg=COLOR_BG)
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+
+        tk.Label(
+            dialog, text="Unlock Encrypted Folder", font=(FONT_HEADING, 13, "bold"),
+            fg=COLOR_TEXT, bg=COLOR_BG
+        ).pack(anchor="w", padx=18, pady=(16, 6))
+        tk.Label(
+            dialog, text="Enter your gocryptfs passphrase:", font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_BG
+        ).pack(anchor="w", padx=18, pady=(0, 5))
+        entry = tk.Entry(
+            dialog, show="•", width=36, font=self.font_label,
+            fg=COLOR_TEXT, bg=COLOR_SURFACE, insertbackground=COLOR_TEXT,
+            relief="solid", bd=1, highlightthickness=1,
+            highlightbackground=COLOR_BORDER, highlightcolor=COLOR_PRIMARY
+        )
+        entry.pack(fill="x", padx=18, pady=(0, 14))
+
+        result = {"password": None}
+
+        def show_validation_error(title, message):
+            self._show_dialog(title, message, kind="error", parent=dialog)
+            if dialog.winfo_exists():
+                dialog.grab_set()
+                entry.focus_set()
+
+        def accept(event=None):
+            password = entry.get()
+            if not password:
+                show_validation_error("Passphrase Required", "Enter a passphrase.")
+                return
+            if "\n" in password or "\r" in password:
+                show_validation_error(
+                    "Invalid Passphrase", "Passphrases cannot contain a newline."
+                )
+                return
+            result["password"] = password
+            dialog.destroy()
+
+        buttons = tk.Frame(dialog, bg=COLOR_BG)
+        buttons.pack(fill="x", padx=18, pady=(0, 16))
+        self._make_button(buttons, "Cancel", dialog.destroy).pack(side="right", padx=(6, 0))
+        self._make_button(buttons, "Unlock", accept, primary=True).pack(side="right")
+
+        dialog.bind("<Return>", accept)
+        dialog.bind("<Escape>", lambda event: dialog.destroy())
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() - dialog.winfo_width()) // 2
+        y = self.root.winfo_rooty() + (self.root.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+        dialog.grab_set()
+        entry.focus_set()
+        self.root.wait_window(dialog)
+        return result["password"]
+
+    def unlock(self):
+        if not self.gocryptfs:
+            self._show_dialog("Quail Crypt", "gocryptfs was not found.", kind="error", parent=self.root)
+            return
+        if not self._has_config():
+            self._show_dialog("Quail Crypt", "No initialized encrypted filesystem was found. Use Create Encrypted Folder first.", kind="info", parent=self.root)
+            self.refresh_status()
+            return
+        if self._mounted(PLAIN_DIR):
+            self.refresh_status()
+            return
+        try:
+            if os.listdir(PLAIN_DIR):
+                self._show_dialog("Cannot Unlock", "~/private is not empty. Quail Crypt will not mount over existing files.", kind="error", parent=self.root)
+                return
+        except OSError as exc:
+            self._show_dialog("Cannot Unlock", f"Could not inspect ~/private:\n\n{exc}", kind="error", parent=self.root)
+            return
+        password = self._ask_unlock_password()
+        if password is None:
+            return
+        self._busy(True, "Unlocking encrypted folder…")
+        try:
+            result = self._run([self.gocryptfs, "-passfile", "/dev/stdin", CIPHER_DIR, PLAIN_DIR], password)
+        finally:
+            password = None
+            self._busy(False)
+        output = self._output(result)
+        if self._mounted(PLAIN_DIR):
+            self.refresh_status()
+            self._show_dialog("Quail Crypt", "The encrypted folder is unlocked.", kind="info", parent=self.root)
+        else:
+            self._show_dialog("Unlock Failed", "gocryptfs could not mount the encrypted folder.\n\n"
+                              + (output or "No details were provided."), kind="error", parent=self.root)
+            self.refresh_status()
+
+    def lock(self):
+        if not self._mounted(PLAIN_DIR):
+            self.refresh_status()
+            return
+        proceed = self._show_dialog(
+            "Lock Encrypted Folder",
+            "Before locking, save your work and close files and applications using ~/private.\n\n"
+            "Quail Crypt will attempt a normal unmount. If files are still in use, the operation may fail.\n\n"
+            "Attempt to lock the folder now?",
+            kind="warning", parent=self.root, confirm=True
+        )
+        if not proceed:
+            return
+        unmount = shutil.which("fusermount") or shutil.which("fusermount3")
+        if not unmount:
+            self._show_dialog("Cannot Lock", "Neither fusermount nor fusermount3 was found. No unmount was attempted.", kind="error", parent=self.root)
+            return
+        self._busy(True, "Locking encrypted folder…")
+        try:
+            result = self._run([unmount, "-u", PLAIN_DIR])
+        finally:
+            self._busy(False)
+        output = self._output(result)
+        if not self._mounted(PLAIN_DIR):
+            self.refresh_status()
+            self._show_dialog("Quail Crypt", "The encrypted folder is locked.", kind="info", parent=self.root)
+        else:
+            self._show_dialog("Lock Failed", "The private directory remains mounted. Close applications using it and try again.\n\n"
+                              + (output or "The unmount command did not provide details."), kind="error", parent=self.root)
+            self.refresh_status()
+
+    def open_private_folder(self):
+        if not self._mounted(PLAIN_DIR):
+            self._show_dialog("Quail Crypt", "Unlock the encrypted folder before opening the private directory.", kind="info", parent=self.root)
+            self.refresh_status()
+            return
+        opener = shutil.which("xdg-open")
+        if not opener:
+            self._show_dialog("Quail Crypt", "xdg-open was not found, so the file manager cannot be opened automatically.", kind="error", parent=self.root)
+            return
+        try:
+            subprocess.Popen([opener, PLAIN_DIR], stdin=subprocess.DEVNULL,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
+        except OSError as exc:
+            self._show_dialog("Quail Crypt", f"Could not open the private directory:\n\n{exc}", kind="error", parent=self.root)
+
+    def _busy(self, busy, message=None):
+        state = "disabled" if busy else "normal"
+        for button in (self.primary_button, self.create_button, self.open_button, self.refresh_button):
+            button.configure(state=state)
+        self.menu_button.configure(state=state)
+        if message:
+            self._set_status("Working", message)
+        if not busy:
+            self.refresh_status()
+
+
+def main():
+    root = tk.Tk()
+    QuailCrypt(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

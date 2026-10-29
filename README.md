@@ -243,7 +243,7 @@ The [Why BcalcOS](https://bcalcos.discourse.group/t/why-bcalcos-linux/33) vignet
 
 The [You Probably Don't Need BcalcOS](https://bcalcos.discourse.group/t/you-probably-dont-need-bcalcos/68) post tackles the Who question in more detail.
 
-I discuss expenses associated with BcalcOS in [BcalcOS Expenses] (https://bcalcos.discourse.group/t/bcalcos-expenses/78).  Spoiler alert:  it is very inexpensive.
+I discuss expenses associated with BcalcOS in [BcalcOS Expenses](https://bcalcos.discourse.group/t/bcalcos-expenses/78).  Spoiler alert:  it is inexpensive.
 
 ---
 

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quail Crypt
+Exec=/usr/bin/quail-crypt
+Icon=/usr/share/bcalcosbrand/quail-crypt-icon.png
+Terminal=false
+Categories=BcalcOS;

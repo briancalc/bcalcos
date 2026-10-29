@@ -8,6 +8,7 @@
 6. [Quail System](#6-quail-system)
 7. [Quail Converter](#7-quail-converter)
 8. [Quail Scan](#8-quail-scan)
+9. [Quail Crypt](#8-quail-crypt)
 ---
 
 ## 1. Introduction
@@ -103,6 +104,20 @@ Location:  /usr/bin/quail-scan
 GUI interface for ClamAV.
 
 Prerequisite:  perhaps not surprising, ClamAV should be installed first.
+
+Can be run via application menu under BcalcOS category.
+
+---
+
+## 9. Quail Crypt 
+
+Name:  quail-crypt
+
+Location:  /usr/bin/quail-crypt
+
+GUI interface for gocryptfs.
+
+Prerequisite:  perhaps not surprising, gocryptfs should be installed first.
 
 Can be run via application menu under BcalcOS category.
 

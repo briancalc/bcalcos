@@ -50,6 +50,8 @@ PACKAGE_MAP = {
     "gocryptfs": "gocryptfs",
     "ClamAV": "clamav",
     "WireGuard": "wireguard",
+    "Quail Scan": "bcalcos-extra",  # Executable is shipped by bcalcos-extra.
+    "Quail Crypt": "bcalcos-extra",  # Executable is shipped by bcalcos-extra.
 
     # System
     "GParted": "gparted",
@@ -86,6 +88,8 @@ NOT_REMOVABLE = frozenset({
     "Quail Converter",
     "Quail Reminder",
     "Quail System",
+    "Quail Scan",
+    "Quail Crypt",
 })
 
 

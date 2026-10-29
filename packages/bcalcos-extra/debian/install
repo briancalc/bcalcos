@@ -1,8 +1,10 @@
 distroapps/quail-system/quail-system    usr/bin/
 distroapps/quail-converter/quail-converter    usr/bin/
+distroapps/quail-scan/quail-scan    usr/bin/
+distroapps/quail-crypt/quail-crypt    usr/bin/
 distroapps/desktop-files/quail-system.desktop    usr/share/applications/
 distroapps/desktop-files/quail-converter.desktop    usr/share/applications/
-distroapps/quail-scan/quail-scan    usr/bin/
 distroapps/desktop-files/quail-scan.desktop    usr/share/applications/
+distroapps/desktop-files/quail-crypt.desktop    usr/share/applications/
 branding/quail-icons/*    usr/share/icons/quail-icons/
 branding/quail-gtk/*      usr/share/themes/Quail${Space}GTK/
