@@ -7,6 +7,7 @@
 5. [Colors and Fonts](#5-colors-and-fonts)
 6. [Theme and Window Style](#6-theme-and-window-style)
 7. [General Icons](#7-general-icons)
+8. [Desktop Wallpapers](#8-desktop-wallpapers)
 ---
 
 ## 1. Introduction
@@ -57,5 +58,12 @@ Name:  Quail GTK
 ## 7. General Icons
 
 Name:  Quail Icons
+
+---
+
+## 8. Desktop Wallpapers
+
+Name:  LLM generated BcalcOS wallpapers
+Location:  /usr/share/bcalcosbrand/deskwall/
 
 ---
