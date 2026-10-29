@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Application status detection for the BcalcOS Welcome Center.
-v1.4
+v1.5
 This module is imported by bcalcos_welcome.py; it is not a standalone program.
 """
 
@@ -99,6 +99,7 @@ SYSTEM_ACTIONS = frozenset({
     "Run Updates",
     "Create New User",
     "Keyboard Layout",
+    "Change Password",
 })
 
 
