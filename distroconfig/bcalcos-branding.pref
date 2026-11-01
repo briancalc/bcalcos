@@ -1,0 +1,6 @@
+Explanation: BcalcOS ships its own branding on top of Devuan's desktop-base.
+Explanation: Pinned to the version BcalcOS r1.4 was built and tested against.
+Explanation: Devuan updates rewrite Xfce/GRUB theme configuration.
+Package: desktop-base
+Pin: version 1:5.9
+Pin-Priority: 1001
