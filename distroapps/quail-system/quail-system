@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # quail-system
-# Quail System v1.3
+# Quail System v1.4
 #
 # BcalcOS system information utility.
 #
@@ -185,51 +185,69 @@ def get_x_server():
     """
     Identify the actual running X server and its version.
 
-    BcalcOS uses XLibre. XLibre commonly retains the Xorg-compatible
-    executable name, so the process name alone is not sufficient.
+    BcalcOS ships XLibre, which keeps the Xorg-compatible executable
+    name, so process and executable names prove nothing. Steps run
+    most-authoritative first:
 
-    The installed xserver-xorg-core package version is used when
-    available because the XLibre server may identify itself as
-    X.Org in its executable version output.
+    1. Ask the running server's own binary. Current XLibre builds
+       identify themselves there ("XLibre X Server ..."). The binary
+       path comes from the process arguments, NOT /proc/PID/exe: the
+       server runs as root under SLiM and that link is denied from a
+       user session. The banner goes to stderr, so both streams are
+       combined regardless of exit code.
+
+    2. Ask the installed server package. BcalcOS has shipped XLibre
+       under two package names (xserver-xorg-core in early releases,
+       xserver-xlibre-core now), so both are checked, with a Status
+       filter so removed-but-config (rc) ghosts cannot answer.
+
+    3. Report the server's own banner honestly, then give up.
     """
 
-    # Find likely X server processes.
+    # Locate the running server and its executable path(s).
     output = command_output(
         ["ps", "-eo", "pid=,comm=,args="],
         timeout=2
     )
 
-    if not output:
-        return "Not available"
+    executables = []
 
-    candidates = []
+    if output:
+        for line in output.splitlines():
+            line = line.strip()
 
-    for line in output.splitlines():
-        line = line.strip()
+            if not line:
+                continue
 
-        if not line:
-            continue
+            parts = line.split(None, 2)
 
-        parts = line.split(None, 2)
+            if len(parts) < 2:
+                continue
 
-        if len(parts) < 2:
-            continue
+            # XLibre and X.Org both use the Xorg executable name;
+            # Xwayland is included so the row stays honest elsewhere.
+            if parts[1] not in ("Xorg", "X", "Xorg.bin", "Xwayland"):
+                continue
 
-        pid = parts[0]
-        command = parts[1]
+            arguments = parts[2] if len(parts) == 3 else ""
 
-        # XLibre commonly uses an Xorg-compatible executable name.
-        if command in ("Xorg", "X", "Xorg.bin"):
-            candidates.append((pid, line))
+            for token in arguments.split():
+                if token.startswith("/"):
+                    if token not in executables:
+                        executables.append(token)
 
-    if not candidates:
-        return "Not available"
+                    break
 
-    for pid, process_line in candidates:
+    # Well-known server binary locations, for processes started
+    # with a bare or relative name.
+    for known in ("/usr/lib/xorg/Xorg", "/usr/bin/Xorg"):
+        if known not in executables and os.path.exists(known):
+            executables.append(known)
 
-        # First try the running executable's version information.
-        executable = f"/proc/{pid}/exe"
+    # --- 1. The running server identifies itself. ---
+    banner = ""
 
+    for executable in executables:
         try:
             result = subprocess.run(
                 [executable, "-version"],
@@ -243,49 +261,56 @@ def get_x_server():
                 result.stdout + "\n" + result.stderr
             ).strip()
 
-            if version_output:
-                lower_output = version_output.lower()
+        except (FileNotFoundError, subprocess.SubprocessError, OSError):
+            continue
 
-                # Some XLibre builds identify themselves directly.
-                if "xlibre" in lower_output:
-                    match = re.search(
-                        r"xlibre(?:\s+x\s+server)?\s+([0-9][0-9.]*)",
-                        version_output,
-                        re.IGNORECASE
-                    )
+        if not version_output:
+            continue
 
-                    if match:
-                        return f"XLibre {match.group(1)}"
+        banner = version_output.splitlines()[0].strip()
 
-                    return "XLibre"
+        if "xlibre" in banner.lower():
+            match = re.search(r"([0-9][0-9.]*)", banner)
 
-        except (FileNotFoundError, PermissionError,
-                subprocess.SubprocessError, OSError):
-            pass
+            if match:
+                return f"XLibre {match.group(1)}"
 
-        # Fall back to inspecting the process command line.
-        lower_process = process_line.lower()
-
-        if "xlibre" in lower_process:
             return "XLibre"
 
-    # XLibre may identify its executable as X.Org. On BcalcOS,
-    # obtain the installed server package version directly.
-    package_version = command_output(
-        [
-            "dpkg-query",
-            "-W",
-            "-f=${Version}",
-            "xserver-xorg-core"
-        ],
-        timeout=2
-    )
+    # --- 2. The installed server package. ---
+    # On BcalcOS either candidate name means XLibre. Revisit this
+    # assumption if the distro ever ships a genuine X.Org server.
+    for package in ("xserver-xlibre-core", "xserver-xorg-core"):
+        package_info = command_output(
+            [
+                "dpkg-query",
+                "-W",
+                "-f=${Status} ${Version}",
+                package
+            ],
+            timeout=2
+        )
 
-    if package_version:
-        return f"XLibre {package_version}"
+        if package_info.startswith("install ok installed"):
+            version = package_info.rsplit(" ", 1)[1]
+            version = re.sub(r"^\d+:", "", version)
 
-    return "X server detected"
+            return f"XLibre {version}"
 
+    # --- 3. A server runs but would not identify as XLibre. ---
+    # Report its own banner rather than guessing a label.
+    if banner:
+        match = re.search(r"^(.*?)\s*([0-9][0-9.]*)\s*$", banner)
+
+        if match:
+            return f"{match.group(1).strip()} {match.group(2)}"
+
+        return banner
+
+    if executables:
+        return "X server detected"
+
+    return "Not available"
 
 def get_cpu():
     """Return a simple CPU description."""

@@ -94,7 +94,7 @@ BcalcOS uses XLibre because the project considers it a capable and maintainable 
 
 See the BcalcOS Community topics [XLibre:  What is it?](https://bcalcos.discourse.group/t/xlibre-what-is-it/25), [Why BcalcOS Uses XLibre](https://bcalcos.discourse.group/t/why-bcalcos-uses-xlibre/26), and [XLibre:  Things to Know](https://bcalcos.discourse.group/t/xlibre-things-to-know/27) for additional information.
 
-There is also an 8 part series **In Depth:  XLibre** which goes into more detail.  [1/8 The Graphical Connector](https://bcalcos.discourse.group/t/the-graphical-connector/105), [2/8 The XLibre Fork](https://bcalcos.discourse.group/t/the-xlibre-fork/107), [3/8 XLibre vs X.org: What Actually Changed](https://bcalcos.discourse.group/t/xlibre-vs-x-org-what-actually-changed/108), [4/8 XLibre: Drivers](https://bcalcos.discourse.group/t/xlibre-drivers/109), [5/8 XLibre: Logs, Tools, and Live State](https://bcalcos.discourse.group/t/xlibre-logs-tools-and-live-state/110), [6/8 tbd], [7/8 tbd], and [8/8 tbd].
+There is also a 9 part series **In Depth:  XLibre** which goes into more detail.  [1/9 The Graphical Connector](https://bcalcos.discourse.group/t/the-graphical-connector/105), [2/9 The XLibre Fork](https://bcalcos.discourse.group/t/the-xlibre-fork/107), [3/9 XLibre vs X.org: What Actually Changed](https://bcalcos.discourse.group/t/xlibre-vs-x-org-what-actually-changed/108), [4/9 XLibre: Drivers](https://bcalcos.discourse.group/t/xlibre-drivers/109), [5/9 XLibre: Logs, Tools, and Live State](https://bcalcos.discourse.group/t/xlibre-logs-tools-and-live-state/110), [6/9 Configuring XLibre](https://bcalcos.discourse.group/t/configuring-xlibre/111), [7/9 XLibre: In Daily Driving](https://bcalcos.discourse.group/t/xlibre-in-daily-driving/112), [8/9 XLibre: The Security Model](https://bcalcos.discourse.group/t/xlibre-the-security-model/113), and [9/9 BcalcOS and XLibre](https://bcalcos.discourse.group/t/bcalcos-and-xlibre/114).
 
 ### SLiM
 
@@ -151,10 +151,11 @@ These currently include applications and scripts such as:
 
 - BcalcOS Welcome Center
 - Quail Calc
-- Quail Reminder
-- Quail System
 - Quail Converter
+- Quail Crypt
+- Quail Reminder
 - Quail Scan
+- Quail System
 - Update Notifier
 - Fstrim Maintenance<br>
 

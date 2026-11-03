@@ -1,3 +1,10 @@
+bcalcos-extra (1.3-7) bobwhite; urgency=medium
+
+  * revise Quail System application
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Mon, 02 Nov 2026 00:00:00 +0000
+
+
 bcalcos-extra (1.3-6) bobwhite; urgency=medium
 
   * Quail Crypt application created
