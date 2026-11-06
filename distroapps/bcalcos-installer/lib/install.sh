@@ -134,6 +134,15 @@ extract_snapshot() {
 
     success "Filesystem snapshot extracted successfully."
 
+    if [[ -n "$TARGET_EFI" ]]; then
+        if ! mountpoint -q "$TARGET_EFI"; then
+            error "ESP $TARGET_EFI is not mounted; aborting before ESP cleanup."
+            return 1
+        fi
+        find "$TARGET_EFI" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+        info "Cleared inherited ESP contents."
+    fi
+
     return 0
 }
 #################
@@ -652,9 +661,9 @@ verify_installation() {
 
     if [[ -n "$TARGET_EFI" ]]; then
         check_grep "UEFI fallback stub present" \
-            '^search .*--fs-uuid' "$TARGET_EFI/EFI/BOOT/grub.cfg"
-        check_grep "UEFI boot-path stub present" \
-            '^search .*--fs-uuid' "$TARGET_EFI/boot/grub/grub.cfg"
+            'search .*--fs-uuid' "$TARGET_EFI/EFI/BOOT/grub.cfg"
+        check_absent "ESP duplicate grub.cfg removed" \
+            "$TARGET_EFI/boot/grub/grub.cfg"
     fi
 
     # User and root
@@ -677,7 +686,7 @@ verify_installation() {
             '^home_crypt[[:space:]]+PARTUUID=.*[[:space:]]none[[:space:]]+luks' \
             "$TARGET_ROOT/etc/crypttab"
         check_grep "fstab references mapper filesystem UUID" \
-            "^UUID=$(blkid -s UUID -o value "$TARGET_HOME_DEVICE")" \
+            "^UUID=$(blkid -c /dev/null -s UUID -o value "$TARGET_HOME_DEVICE")" \
             "$TARGET_ROOT/etc/fstab"
     fi
 
@@ -788,12 +797,12 @@ generate_fstab() {
         return 1
     fi
 
-    root_uuid="$(blkid -s UUID -o value "$root")" || {
+    root_uuid="$(blkid -c /dev/null -s UUID -o value "$root")" || {
         error "Unable to read root filesystem UUID."
         return 1
     }
 
-    home_uuid="$(blkid -s UUID -o value "$home")" || {
+    home_uuid="$(blkid -c /dev/null -s UUID -o value "$home")" || {
         error "Unable to read home filesystem UUID."
         return 1
     }
@@ -804,7 +813,7 @@ generate_fstab() {
     fi
 
     if [[ "$FIRMWARE_MODE" == "uefi" ]]; then
-        esp_uuid="$(blkid -s UUID -o value "$esp")" || {
+        esp_uuid="$(blkid -c /dev/null -s UUID -o value "$esp")" || {
             error "Unable to read EFI filesystem UUID."
             return 1
         }
@@ -926,6 +935,7 @@ install_grub_uefi() {
         --efi-directory="$TARGET_EFI" \
         --boot-directory="$TARGET_ROOT/boot" \
         --removable \
+        --no-uefi-secure-boot \
         "$disk"; then
         error "GRUB UEFI installation failed."
         return 1
@@ -985,7 +995,11 @@ write_grub_stubs() {
 
     # The stub locates the root filesystem by UUID, so it is independent
     # of GRUB's disk enumeration order (hd0, hd1, ...).
-    root_uuid="$(blkid -s UUID -o value "$TARGET_ROOT_PARTITION")" || {
+    if command_exists udevadm; then
+        udevadm settle || true
+    fi
+
+    root_uuid="$(blkid -c /dev/null -s UUID -o value "$TARGET_ROOT_PARTITION")" || {
         error "Unable to read root filesystem UUID."
         return 1
     }
@@ -995,33 +1009,28 @@ write_grub_stubs() {
         return 1
     fi
 
-    info "Writing GRUB stubs for root UUID $root_uuid ..."
+    info "Writing GRUB stub for root UUID $root_uuid ..."
 
-    mkdir -p "$TARGET_EFI/EFI/BOOT" "$TARGET_EFI/boot/grub"
+    mkdir -p "$TARGET_EFI/EFI/BOOT"
 
     {
-        printf 'search --no-floppy --fs-uuid --set=root %s\n' "$root_uuid"
-        printf 'set prefix=($root)/boot/grub\n'
-        printf 'insmod normal\n'
-        printf 'normal\n'
+        printf 'if search --no-floppy --fs-uuid --set=root %s; then\n' "$root_uuid"
+        printf '    set prefix=($root)/boot/grub\n'
+        printf '    configfile ($root)/boot/grub/grub.cfg\n'
+        printf 'else\n'
+        printf '    echo "BcalcOS: root filesystem UUID %s not found."\n' "$root_uuid"
+        printf 'fi\n'
     } > "$TARGET_EFI/EFI/BOOT/grub.cfg" || {
         error "Failed to write $TARGET_EFI/EFI/BOOT/grub.cfg"
         return 1
     }
 
-    if ! cp -f "$TARGET_EFI/EFI/BOOT/grub.cfg" \
-        "$TARGET_EFI/boot/grub/grub.cfg"; then
-        error "Failed to write boot-path GRUB stub."
-        return 1
-    fi
-
-    if [[ ! -s "$TARGET_EFI/EFI/BOOT/grub.cfg" ||
-          ! -s "$TARGET_EFI/boot/grub/grub.cfg" ]]; then
+    if [[ ! -s "$TARGET_EFI/EFI/BOOT/grub.cfg" ]]; then
         error "GRUB stub verification failed."
         return 1
     fi
 
-    success "GRUB stubs written for root UUID $root_uuid (both ESP paths)."
+    success "GRUB stub written for root UUID $root_uuid."
 
     return 0
 }

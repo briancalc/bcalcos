@@ -1,7 +1,7 @@
-PRETTY_NAME="BcalcOS Linux 1.3 (bobwhite)"
+PRETTY_NAME="BcalcOS Linux 1.4 (bobwhite)"
 NAME="BcalcOS Linux"
-VERSION_ID="1.3"
-VERSION="1.3 (bobwhite)"
+VERSION_ID="1.4"
+VERSION="1.4 (bobwhite)"
 VERSION_CODENAME="bobwhite"
 ID=BcalcOS
 ID_LIKE=debian

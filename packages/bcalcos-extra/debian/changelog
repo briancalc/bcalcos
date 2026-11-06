@@ -1,3 +1,10 @@
+bcalcos-extra (1.4-1) bobwhite; urgency=medium
+
+  * sync with new BcalcOS 1.4 release
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Fri, 06 Nov 2026 00:00:00 +0000
+
+
 bcalcos-extra (1.3-7) bobwhite; urgency=medium
 
   * revise Quail System application

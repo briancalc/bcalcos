@@ -264,7 +264,7 @@ BcalcOS Downloads: [SourceForge](https://sourceforge.net/projects/bcalcos-linux/
 
 ## Current BcalcOS
 
-**Current release:** BcalcOS 1.3.5 (bobwhite)  
+**Current release:** BcalcOS 1.4 (bobwhite)  
 Base: Devuan Excalibur  
 Architecture: 64-bit x86  
 Package management: APT / dpkg  
