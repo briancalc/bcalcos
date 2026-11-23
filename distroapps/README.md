@@ -8,7 +8,8 @@
 6. [Quail System](#6-quail-system)
 7. [Quail Converter](#7-quail-converter)
 8. [Quail Scan](#8-quail-scan)
-9. [Quail Crypt](#8-quail-crypt)
+9. [Quail Crypt](#9-quail-crypt)
+10. [Quail Snap](#10-quail-snap)
 ---
 
 ## 1. Introduction
@@ -118,6 +119,24 @@ Location:  /usr/bin/quail-crypt
 GUI interface for gocryptfs.
 
 Prerequisite:  perhaps not surprising, gocryptfs should be installed first.
+
+Can be run via application menu under BcalcOS category.
+
+---
+
+## 10. Quail Snap 
+
+Name:  quail-snap **ALPHA**
+
+Location:  /usr/bin/quail-snap
+
+Application for creating snapshots of your BcalcOS system.
+This is an Alpha release with all that implies.
+- Distributable ISO works well in testing
+- Personal ISO works, but currently takes far too long to be practical
+- Instructions on use to follow
+
+Dependencies:  live-boot, live-config, memtest86+
 
 Can be run via application menu under BcalcOS category.
 
