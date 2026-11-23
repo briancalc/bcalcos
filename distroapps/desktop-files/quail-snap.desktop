@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quail Snap
+Exec=xfce4-terminal --command="sudo /usr/bin/quail-snap"
+Icon=/usr/share/bcalcosbrand/quail-snap-icon.png
+Terminal=true
+Categories=BcalcOS;

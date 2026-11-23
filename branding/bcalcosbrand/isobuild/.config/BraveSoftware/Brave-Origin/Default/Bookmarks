@@ -1,0 +1,77 @@
+{
+   "checksum": "0104ede96f22a9b0cba0ed7c89bd16b3",
+   "checksum_sha256": "98ea6eda1f9d74bc8bf235ef2b831d928b0a6b1f8164102519797f0d118be7b5d",
+   "roots": {
+      "bookmark_bar": {
+         "children": [
+            {
+               "children": [
+                  {
+                     "date_added": "0",
+                     "guid": "00000000-0000-4000-8000-000000000001",
+                     "id": "3",
+                     "name": "BcalcOS Website",
+                     "type": "url",
+                     "url": "https://www.bcalcos.org/"
+                  },
+                  {
+                     "date_added": "0",
+                     "guid": "00000000-0000-4000-8000-000000000002",
+                     "id": "4",
+                     "name": "BcalcOS Community",
+                     "type": "url",
+                     "url": "https://bcalcos.discourse.group/t/bcalcos-vignettes/79"
+                  },
+                  {
+                     "date_added": "0",
+                     "guid": "00000000-0000-4000-8000-000000000003",
+                     "id": "5",
+                     "name": "BcalcOS GitHub",
+                     "type": "url",
+                     "url": "https://github.com/briancalc/bcalcos"
+                  },
+                  {
+                     "date_added": "0",
+                     "guid": "00000000-0000-4000-8000-000000000004",
+                     "id": "6",
+                     "name": "BcalcOS SourceForge",
+                     "type": "url",
+                     "url": "https://sourceforge.net/projects/bcalcos-linux/files/"
+                  }
+               ],
+               "date_added": "0",
+               "date_modified": "0",
+               "guid": "00000000-0000-4000-8000-000000000005",
+               "id": "2",
+               "name": "BcalcOS",
+               "type": "folder"
+            }
+         ],
+         "date_added": "0",
+         "date_modified": "0",
+         "guid": "00000000-0000-4000-8000-000000000006",
+         "id": "1",
+         "name": "Bookmarks bar",
+         "type": "folder"
+      },
+      "other": {
+         "children": [],
+         "date_added": "0",
+         "date_modified": "0",
+         "guid": "00000000-0000-4000-8000-000000000007",
+         "id": "7",
+         "name": "Other bookmarks",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [],
+         "date_added": "0",
+         "date_modified": "0",
+         "guid": "00000000-0000-4000-8000-000000000008",
+         "id": "8",
+         "name": "Mobile bookmarks",
+         "type": "folder"
+      }
+   },
+   "version": 1
+}

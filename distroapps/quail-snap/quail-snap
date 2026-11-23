@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+import os
+import sys
+
+APP_DIR = "/usr/lib/quail-snapapp"
+sys.path.insert(0, APP_DIR)
+
+
+def main():
+    if sys.version_info < (3, 8):
+        sys.exit("Quail Snap requires Python 3.8 or newer")
+    from core import workspace
+    workspace.init()
+    import tkinter as tk
+    from gui.main_window import MainWindow
+
+    root = tk.Tk()
+    MainWindow(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

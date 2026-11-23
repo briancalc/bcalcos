@@ -1,0 +1,59 @@
+# GRUB2 gfxmenu Devuan theme
+# Designed for any resolution
+# based on the Vimix theme by vinceliuice (http://vinceliuice.deviantart.com)
+# Copyright Dyne.org, License GPLv2.
+
+# Global Properties
+
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#000000"
+terminal-font: "DejaVu Sans 32"
+terminal-box: "terminal_box_*.png"
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
+
+# Show the boot menu
+
++ boot_menu {
+  left = 15%
+  top = 30%
+  width = 70%
+  height = 50%
+  item_font = "DejaVu Sans 32"
+  item_color = "#DCDDDE"
+  selected_item_color = "#ffffff"
+  item_height = 44
+  item_spacing = 12
+  selected_item_pixmap_style = "select_*.png"
+}
+
+# Show a countdown message using the label component
+
++ label {
+  top = 82%
+  left = 35%
+  width = 30%
+  align = "center"
+  id = "__timeout__"
+  text = "Booting in %d seconds"
+  color = "#DCDDDE"
+  font = "DejaVu Sans 32"
+}
+
+# Show the Bcalcos logo
+
++ image {
+  id = "__bcalcos-grub-logo__"
+  top = 15% # was 2%
+  left = 10% # was 2%
+  width = 232
+  height = 28
+  file = "bcalcos-grub-logo.png"
+}
+
+
+

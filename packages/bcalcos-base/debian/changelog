@@ -1,3 +1,10 @@
+bcalcos-base (1.4-2) bobwhite; urgency=medium
+
+  * apply GRUB configuration to suppress memtest86+ entries due to Quail Snap installation
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Sun, 22 Nov 2026 00:00:00 +0000
+
+
 bcalcos-base (1.4-1) bobwhite; urgency=medium
 
   * sync with new BcalcOS 1.4 release
