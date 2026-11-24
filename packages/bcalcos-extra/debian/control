@@ -9,7 +9,7 @@ Rules-Requires-Root: no
 Package: bcalcos-extra
 Architecture: all
 Depends: ${misc:Depends},
-         live-boot,
-         live-config,
          memtest86+
+Recommends: live-boot,
+            live-config
 Description: additional, non-core BcalcOS applications

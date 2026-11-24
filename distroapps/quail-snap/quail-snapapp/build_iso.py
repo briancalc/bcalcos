@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 
-sys.path.insert(0, "/usr/lib/quail-snapapp")
+sys.path.insert(0, "/opt/quail_snapapp")
 
 from core import workspace, preflight, capture, home, brand, sanitize
 from core import initramfs, squashfs, bootloader, iso_builder, verify
@@ -79,8 +79,7 @@ def export_iso(iso_path):
 
 def main():
     lock = workspace.kickoff_cleanup()
-    w = workspace.create_workspace()
-    print("workspace:", w.path)
+    w = None
     exported = None
     try:
         pw = _invoking_user()
@@ -91,6 +90,8 @@ def main():
             print("[%s] %s: %s" % (r.status.upper(), r.name, r.detail))
         if not report.ok:
             raise SystemExit("preflight failed")
+        w = workspace.create_workspace()
+        print("workspace:", w.path)
         capture.capture(w, EXPORT_DIR)
         sanitize.sanitize(w, creator=creator)
         home.build_home(w)
@@ -108,7 +109,10 @@ def main():
         exported = export_iso(iso)
         print("exported:", exported)
     finally:
-        workspace.finalize(w, exported, lock)
+        if w is not None:
+            workspace.finalize(w, exported, lock)
+        elif lock is not None:
+            lock.release()
 
 
 if __name__ == "__main__":

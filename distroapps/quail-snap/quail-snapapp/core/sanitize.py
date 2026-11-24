@@ -558,31 +558,22 @@ def _plan_resolv_conf(rootfs, workspace):
     _validate_parent_dirs(rootfs, "/etc/resolv.conf")
     path = os.path.join(etc, "resolv.conf")
     if not os.path.lexists(path):
-        return ("create", path)
+        return ("keep", path)
     st = os.lstat(path)
     if stat.S_ISLNK(st.st_mode):
-        return ("replace_symlink", path)
+        return ("keep", path)
     if stat.S_ISREG(st.st_mode):
         return ("truncate", path)
     raise SanitizeError("staged /etc/resolv.conf is an unexpected file type: " + path)
 
 
 def _execute_resolv_conf(action, path):
+    if action == "keep":
+        return
     if action == "truncate":
         _write_lines(path, [], "resolv.conf")
         return
-    if action == "replace_symlink":
-        try:
-            os.unlink(path)
-        except OSError as exc:
-            raise SanitizeError("cannot unlink staged /etc/resolv.conf symlink: %s" % exc)
-    try:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-        os.close(fd)
-        os.chmod(path, 0o644)
-        os.chown(path, 0, 0)
-    except OSError as exc:
-        raise SanitizeError("cannot create staged /etc/resolv.conf: %s" % exc)
+    raise SanitizeError("unknown resolv.conf action: %r" % action)
 
 
 def _plan_regular_file_removals(rootfs, workspace, rels):
@@ -635,7 +626,7 @@ def _split_comment(ln):
 
 def _scrub_member_list(entries, creator, uid):
     for e in entries:
-        if "(" in e or '"' in e or "\\" in e:
+        if "(" in e or '"' in e or "\\\\" in e:
             raise SanitizeError("malformed sudoers list member %r, refusing" % e)
         t = e.lstrip("!")
         if uid is None and t.startswith("#") and t[1:].isdigit():
@@ -649,7 +640,7 @@ def _scrub_sudoers_line(ln, creator, uid):
     s = ln.strip()
     if not s or (s.startswith("#") and not s[1:2].isdigit()):
         return ln, "keep"
-    if s.endswith("\\"):
+    if s.endswith("\\\\"):
         raise SanitizeError("sudoers backslash-continued line, refusing to parse: %r" % ln)
     body, comment = _split_comment(ln)
     stripped = body.strip()

@@ -1,3 +1,10 @@
+bcalcos-extra (1.4-3) bobwhite; urgency=medium
+
+  * continue work on Quail Snap
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Tue, 24 Nov 2026 00:00:00 +0000
+
+
 bcalcos-extra (1.4-2) bobwhite; urgency=medium
 
   * add Quail Snap application

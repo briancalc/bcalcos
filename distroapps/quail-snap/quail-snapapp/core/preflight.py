@@ -9,7 +9,7 @@ OK = "ok"
 WARN = "warn"
 FAIL = "fail"
 
-# sha256sum is required: it is the sole verification tool for a completed ISO
+# sha256sum is required: it is the sole verification tool for a completed ISO.
 # dpkg-query is required: the boot tree stage (bootloader.write_pkglist) runs it
 # and the ISO verification requires its output. chroot is deliberately not listed:
 # it is coreutils-present on any viable host.
@@ -20,8 +20,20 @@ ISOLINUX_FILE_CANDIDATES = {
     "isolinux.bin": ("/usr/lib/ISOLINUX/isolinux.bin", "/usr/lib/syslinux/bios/isolinux.bin"),
     "ldlinux.c32": ("/usr/lib/syslinux/modules/bios/ldlinux.c32",),
 }
-LIVE_PACKAGES = ("live-boot", "live-config")
 BCALCOS_PACKAGE = "bcalcos-base"
+# Packages the live-ISO build requires on the build host. Each must be in
+# dpkg status exactly "install ok installed". Backend packages are listed
+# explicitly: an installed parent (live-boot / live-config) does not prove
+# its backend (live-boot-initramfs-tools / live-config-sysvinit) is installed
+# and configured, so every entry is checked independently.
+REQUIRED_LIVE_PACKAGES = (
+    "live-boot",
+    "live-boot-initramfs-tools",
+    "live-config",
+    "live-config-sysvinit",
+    "memtest86+",
+)
+LIVE_PACKAGES_INSTALL_CMD = "sudo apt install " + " ".join(REQUIRED_LIVE_PACKAGES)
 SPACE_FLOOR_BYTES = 2 * 1024 ** 3
 
 
@@ -61,18 +73,25 @@ def check_root():
 
 
 def _check_package(pkg, missing_status=WARN):
+    # Fail closed: for FAIL-grade checks (bcalcos-base, the required live
+    # packages) an inability to verify must produce FAIL, never WARN.
     if shutil.which("dpkg-query") is None:
-        return CheckResult("package: %s" % pkg, WARN, "dpkg-query unavailable; cannot verify")
+        return CheckResult("package: %s" % pkg, missing_status,
+                           "dpkg-query unavailable; cannot verify")
     try:
         proc = subprocess.run(
             ["dpkg-query", "-W", "-f=${Status}", pkg],
             capture_output=True, text=True, timeout=10,
         )
-        installed = proc.returncode == 0 and "install ok installed" in proc.stdout
     except (OSError, subprocess.SubprocessError) as exc:
-        return CheckResult("package: %s" % pkg, WARN, "check failed: %s" % exc)
-    if installed:
+        return CheckResult("package: %s" % pkg, missing_status,
+                           "check failed: %s" % exc)
+    status = proc.stdout.strip()
+    if proc.returncode == 0 and status == "install ok installed":
         return CheckResult("package: %s" % pkg, OK, "installed")
+    if proc.returncode == 0:
+        return CheckResult("package: %s" % pkg, missing_status,
+                           "not fully configured (dpkg status: %s)" % (status or "unknown"))
     return CheckResult("package: %s" % pkg, missing_status, "not installed")
 
 
@@ -95,8 +114,18 @@ def check_dependencies():
         else:
             results.append(CheckResult("isolinux file: %s" % label, WARN,
                                        "not found in: " + ", ".join(candidates)))
-    for pkg in LIVE_PACKAGES:
-        results.append(_check_package(pkg))
+    missing_live = []
+    for pkg in REQUIRED_LIVE_PACKAGES:
+        result = _check_package(pkg, missing_status=FAIL)
+        results.append(result)
+        if result.status == FAIL:
+            missing_live.append(pkg)
+    if missing_live:
+        results.append(CheckResult(
+            "required live packages", FAIL,
+            "\nISO builds require:\n" + "\n".join(REQUIRED_LIVE_PACKAGES)
+            + "\n\nInstall them:\n" + LIVE_PACKAGES_INSTALL_CMD
+            + "\n\nMissing or not fully configured: " + ", ".join(missing_live)))
     return results
 
 
