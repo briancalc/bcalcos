@@ -128,10 +128,9 @@ Users can subsequently customize the system to suit their own needs.
 
 ### Custom installation
 
-Versions 1.4 and later: BcalcOS includes its own GUI custom installer.<br>
-Versions 1.3.5 and earlier: BcalcOS includes its own terminal-based installer.
+BcalcOS includes its own custom GUI installer.<br>
 
-The installer is designed specifically around the BcalcOS system rather than attempting to support the widest range of possible Linux installation scenarios. This keeps the installation process relatively straightforward and beginner-friendly, but it also means the installer makes defined assumptions and has specific limitations. <br>
+The installer is designed specifically around the BcalcOS system rather than attempting to support the widest range of possible Linux installation scenarios. This keeps the installation process relatively straightforward and beginner-friendly but it also means the installer makes defined assumptions and has specific limitations. <br>
 ![BcalcOS Installer](readmeimages/readme-installer.png)<br>
 
 For a much more in depth discussion, see the BcalcOS Community posts [BcalcOS Installer:  Design Notes & Trade-offs](https://bcalcos.discourse.group/t/bcalcos-installer-design-notes-trade-offs/19), [BcalcOS Installation Process](https://bcalcos.discourse.group/t/bcalcos-installation-process/20), [Before You Install BcalcOS](https://bcalcos.discourse.group/t/before-you-install-bcalcos/22), [What Happens to the Disk?](https://bcalcos.discourse.group/t/what-happens-to-the-disk-during-installation/23), [Encryption Explained](https://bcalcos.discourse.group/t/encryption-explained/24), [Dual Boot Grub Note](https://bcalcos.discourse.group/t/dual-boot-grub-note/49), and [The BcalcOS Filesystem](https://bcalcos.discourse.group/t/the-bcalcos-filesystem/45).
@@ -155,13 +154,14 @@ These currently include applications and scripts such as:
 - Quail Crypt
 - Quail Reminder
 - Quail Scan
+- Quail Snapshot
 - Quail System
 - Update Notifier
 - Fstrim Maintenance<br>
 
 <img src="readmeimages/readme-quail-system.png" width="400"><br>
 
-For more details, see the BcalcOS Community topics [BcalcOS Extra Apps & Packages](https://bcalcos.discourse.group/t/bcalcos-extra-apps-packages/52) and [BcalcOS Maintenance Tools](https://bcalcos.discourse.group/t/bcalcos-maintenance-tools/41).
+For more details, see the BcalcOS Community topics [BcalcOS Custom Applications](https://bcalcos.discourse.group/t/bcalcos-custom-apps/40) and [BcalcOS Maintenance Tools](https://bcalcos.discourse.group/t/bcalcos-maintenance-tools/41).
 
 ### BcalcOS Repositories
 
@@ -171,7 +171,7 @@ BcalcOS also maintains its own APT repository. It includes custom BcalcOS applic
 
 The BcalcOS repository allows these packages to be installed and updated using the normal Debian/Devuan APT package-management system.
 
-For additional information, see the BcalcOS Community vignettes [BcalcOS Software Repositories](https://bcalcos.discourse.group/t/bcalcos-software-repositories/44) and [BcalcOS Base Repo](https://bcalcos.discourse.group/t/bcalcos-base-repo/51). 
+For additional information, see the BcalcOS Community vignette [BcalcOS Software Repositories](https://bcalcos.discourse.group/t/bcalcos-software-repositories/44). 
 
 ### BcalcOS Visual Identity
 

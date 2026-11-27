@@ -1,3 +1,10 @@
+bcalcos-extra (1.4-4) bobwhite; urgency=medium
+
+  * change to Quail Crypt
+
+ -- BcalcOS Linux <bcalcos@bcalcos.org>  Fri, 27 Nov 2026 00:00:00 +0000
+
+
 bcalcos-extra (1.4-3) bobwhite; urgency=medium
 
   * continue work on Quail Snap

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Quail Crypt
-Version 1.0
+Version 1.1
 A simple graphical front end for the existing gocryptfs utility.
 """
 
@@ -29,8 +29,8 @@ FONT_HEADING = "Poppins"
 FONT_MONO = "monospace"
 
 VERSION = "1.0.7"
-CIPHER_DIR = os.path.expanduser("~/encrypted")
-PLAIN_DIR = os.path.expanduser("~/private")
+CIPHER_DIR = os.path.expanduser("~/goencrypted")
+PLAIN_DIR = os.path.expanduser("~/goprivate")
 
 
 class QuailCrypt:
@@ -100,7 +100,7 @@ class QuailCrypt:
                      row=0, column=0, columnspan=2, sticky="w", pady=(0, 3))
         tk.Label(paths, text="🔒", font=(FONT_PRIMARY, 15), fg=COLOR_TEXT,
                  bg=COLOR_SURFACE).grid(row=1, column=0, sticky="w", padx=(0, 9))
-        tk.Label(paths, text="~/encrypted", font=self.font_path, fg=COLOR_TEXT,
+        tk.Label(paths, text="~/goencrypted", font=self.font_path, fg=COLOR_TEXT,
                  bg=COLOR_SURFACE, anchor="w").grid(row=1, column=1, sticky="ew")
         tk.Frame(paths, height=1, bg=COLOR_BORDER).grid(
             row=2, column=0, columnspan=2, sticky="ew", pady=10)
@@ -109,7 +109,7 @@ class QuailCrypt:
                      row=3, column=0, columnspan=2, sticky="w", pady=(0, 3))
         tk.Label(paths, text="📁", font=(FONT_PRIMARY, 15), fg=COLOR_TEXT,
                  bg=COLOR_SURFACE).grid(row=4, column=0, sticky="w", padx=(0, 9))
-        tk.Label(paths, text="~/private", font=self.font_path, fg=COLOR_TEXT,
+        tk.Label(paths, text="~/goprivate", font=self.font_path, fg=COLOR_TEXT,
                  bg=COLOR_SURFACE, anchor="w").grid(row=4, column=1, sticky="ew")
 
         actions = tk.Frame(content, bg=COLOR_BG)
@@ -134,7 +134,7 @@ class QuailCrypt:
         footer.columnconfigure(0, weight=1)
         tk.Label(
             footer,
-            text="Work with your files in the PRIVATE folder.",
+            text="Work with your files in the GOPRIVATE folder.",
             font=self.font_label, fg=COLOR_TEXT_MUTED, bg=COLOR_BG,
             anchor="w", justify="left"
         ).grid(row=0, column=0, sticky="w", padx=(0, 12))
@@ -331,7 +331,7 @@ class QuailCrypt:
             self._set_status("Error", "The required directories could not be prepared.")
             return
         if self._mounted(PLAIN_DIR):
-            self._set_status("Unlocked", "The encrypted filesystem is mounted at ~/private.")
+            self._set_status("Unlocked", "The encrypted filesystem is mounted at ~/goprivate.")
             self.primary_button.configure(text="Lock Encrypted Folder", command=self.lock)
             self.open_button.configure(state="normal")
             self.create_button.configure(state="disabled")
@@ -359,7 +359,7 @@ class QuailCrypt:
                 self.create_button.configure(state="disabled")
                 return
             if entries:
-                self._set_status("Setup blocked", "~/encrypted contains files but no gocryptfs.conf. Quail Crypt will not initialize over them.")
+                self._set_status("Setup blocked", "~/goencrypted contains files but no gocryptfs.conf. Quail Crypt will not initialize over them.")
                 self.create_button.configure(state="disabled")
             elif not self.gocryptfs:
                 self._set_status("Unavailable", "gocryptfs was not found. Install it before creating an encrypted folder.")
@@ -431,16 +431,16 @@ class QuailCrypt:
             self._show_dialog("Quail Crypt", f"Could not inspect the directories:\n\n{exc}", kind="error", parent=self.root)
             return
         if cipher_entries:
-            self._show_dialog("Setup blocked", "~/encrypted is not empty and has no gocryptfs.conf. Nothing has been changed.", kind="error", parent=self.root)
+            self._show_dialog("Setup blocked", "~/goencrypted is not empty and has no gocryptfs.conf. Nothing has been changed.", kind="error", parent=self.root)
             self.refresh_status()
             return
         if plain_entries:
-            self._show_dialog("Setup blocked", "~/private is not empty. Move or preserve its contents before creating the encrypted filesystem; Quail Crypt will not mount over them.", kind="error", parent=self.root)
+            self._show_dialog("Setup blocked", "~/goprivate is not empty. Move or preserve its contents before creating the encrypted filesystem; Quail Crypt will not mount over them.", kind="error", parent=self.root)
             return
 
         confirmed = self._show_dialog(
             "Create Encrypted Folder",
-            "This will initialize ~/encrypted as a new gocryptfs encrypted filesystem.\n\n"
+            "This will initialize ~/goencrypted as a new gocryptfs encrypted filesystem.\n\n"
             "Use a strong passphrase and keep a secure backup of your data. "
             "If you lose the passphrase, your files may be unrecoverable.\n\n"
             "Continue?",
@@ -590,10 +590,10 @@ class QuailCrypt:
             return
         try:
             if os.listdir(PLAIN_DIR):
-                self._show_dialog("Cannot Unlock", "~/private is not empty. Quail Crypt will not mount over existing files.", kind="error", parent=self.root)
+                self._show_dialog("Cannot Unlock", "~/goprivate is not empty. Quail Crypt will not mount over existing files.", kind="error", parent=self.root)
                 return
         except OSError as exc:
-            self._show_dialog("Cannot Unlock", f"Could not inspect ~/private:\n\n{exc}", kind="error", parent=self.root)
+            self._show_dialog("Cannot Unlock", f"Could not inspect ~/goprivate:\n\n{exc}", kind="error", parent=self.root)
             return
         password = self._ask_unlock_password()
         if password is None:
@@ -619,7 +619,7 @@ class QuailCrypt:
             return
         proceed = self._show_dialog(
             "Lock Encrypted Folder",
-            "Before locking, save your work and close files and applications using ~/private.\n\n"
+            "Before locking, save your work and close files and applications using ~/goprivate.\n\n"
             "Quail Crypt will attempt a normal unmount. If files are still in use, the operation may fail.\n\n"
             "Attempt to lock the folder now?",
             kind="warning", parent=self.root, confirm=True
